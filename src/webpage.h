@@ -7,16 +7,15 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SmartVest · เสื้อกั๊กระบายความร้อนอัจฉริยะ (3D Fan & Controller)</title>
+    <title>SmartVest · ระบบควบคุมเสื้อกั๊กปรับอากาศอัจฉริยะ</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#0284c7">
+    <meta name="theme-color" content="#0F8B8D">
 
     <!-- Pinned Library Versions (No @latest) -->
     <script src="https://cdn.tailwindcss.com/3.4.16"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.469.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -24,20 +23,34 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Prompt', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'system-ui', '"Segoe UI"', 'Roboto', '"Noto Sans Thai"', '"Thonburi"', 'sans-serif'],
+                        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
                     },
                     colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            200: '#bae6fd',
-                            300: '#7dd3fc',
-                            400: '#38bdf8',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            800: '#075985',
-                            900: '#0c4a6e',
+                        calm: {
+                            bg: '#F5F3EE',
+                            card: '#FFFFFF',
+                            sub: '#EEF2F0',
+                            text: '#1C2623',
+                            muted: '#5D6B66',
+                            accent: '#0F8B8D',
+                            accentText: '#0B7476',
+                            ok: '#2E9E6B',
+                            warn: '#D9902F',
+                            derate: '#E0702B',
+                            cut: '#C8402F',
+                        },
+                        darkCalm: {
+                            bg: '#0E1513',
+                            card: '#16201D',
+                            sub: '#1D2A26',
+                            text: '#E8EFEC',
+                            muted: '#8B9B95',
+                            accent: '#5CD1C9',
+                            ok: '#34B37A',
+                            warn: '#E5A33D',
+                            derate: '#E88344',
+                            cut: '#D95343',
                         }
                     }
                 }
@@ -46,304 +59,407 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
     </script>
 
     <style>
+        :root {
+            --bg-color: #F5F3EE;
+            --card-color: #FFFFFF;
+            --card-sub: #EEF2F0;
+            --text-main: #1C2623;
+            --text-muted: #5D6B66;
+            --accent: #0F8B8D;
+            --accent-text: #0B7476;
+            --st-ok: #2E9E6B;
+            --st-warn: #D9902F;
+            --st-derate: #E0702B;
+            --st-cut: #C8402F;
+            --border-subtle: rgba(28, 38, 35, 0.08);
+            --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.03), 0 4px 14px rgba(0, 0, 0, 0.04);
+        }
+
+        html.dark {
+            --bg-color: #0E1513;
+            --card-color: #16201D;
+            --card-sub: #1D2A26;
+            --text-main: #E8EFEC;
+            --text-muted: #8B9B95;
+            --accent: #5CD1C9;
+            --accent-text: #5CD1C9;
+            --st-ok: #34B37A;
+            --st-warn: #E5A33D;
+            --st-derate: #E88344;
+            --st-cut: #D95343;
+            --border-subtle: rgba(232, 239, 236, 0.09);
+            --shadow-subtle: 0 2px 6px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
         body {
-            font-family: 'Prompt', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            transition: background-color 0.25s ease, color 0.25s ease;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Noto Sans Thai", "Thonburi", sans-serif;
+            font-size: 16px;
+            line-height: 1.55;
+            transition: background-color 200ms ease-out, color 200ms ease-out;
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
+            padding-top: env(safe-area-inset-top);
         }
 
-        /* Light Theme */
-        html.light body {
-            background-color: #f8fafc;
-            color: #0f172a;
-        }
-        html.light .glass-card {
-            background: #ffffff;
-            border: 1.5px solid #e2e8f0;
-            box-shadow: 0 4px 18px -2px rgba(148, 163, 184, 0.1);
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
         }
 
-        /* Dark Theme */
-        html.dark body {
-            background-color: #0b111a;
-            color: #f1f5f9;
-        }
-        html.dark .glass-card {
-            background: #141c28;
-            border: 1.5px solid #223043;
-            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+        .calm-card {
+            background-color: var(--card-color);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            box-shadow: var(--shadow-subtle);
+            transition: transform 200ms ease-out, box-shadow 200ms ease-out, border-color 200ms ease-out;
         }
 
-        .btn-touch-active:active { transform: scale(0.97); }
+        .calm-btn {
+            border-radius: 14px;
+            transition: transform 150ms ease-out, opacity 150ms ease-out, background-color 150ms ease-out;
+        }
+        .calm-btn:active {
+            transform: scale(0.97);
+        }
 
-        /* Custom scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 9999px; }
+        /* Glass only for Top Sticky Bar */
+        .glass-top-bar {
+            background-color: rgba(245, 243, 238, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        html.dark .glass-top-bar {
+            background-color: rgba(14, 21, 19, 0.85);
+        }
 
-        /* Toast Banner */
+        /* Toast notification */
         .toast-banner {
             position: fixed;
-            bottom: 84px;
+            bottom: calc(88px + env(safe-area-inset-bottom));
             left: 50%;
             transform: translateX(-50%) translateY(30px);
-            background: #1e293b;
-            color: #f8fafc;
-            padding: 12px 22px;
+            background: #1C2623;
+            color: #F5F3EE;
+            padding: 12px 24px;
             border-radius: 9999px;
-            font-size: 14px;
+            font-size: 14.5px;
             font-weight: 600;
-            box-shadow: 0 10px 25px -3px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.25);
             z-index: 1000;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 200ms ease-out;
             max-width: 90%;
             text-align: center;
-            border: 1px solid #334155;
+            border: 1px solid rgba(255, 255, 255, 0.12);
         }
         .toast-banner.show {
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(0);
         }
+        html.dark .toast-banner {
+            background: #273833;
+            color: #E8EFEC;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Respect prefers-reduced-motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, ::before, ::after {
+                animation-delay: -1ms !important;
+                animation-duration: 1ms !important;
+                animation-iteration-count: 1 !important;
+                background-attachment: initial !important;
+                scroll-behavior: auto !important;
+                transition-delay: 0s !important;
+                transition-duration: 0s !important;
+            }
+        }
+
+        /* Skeleton shimmer */
+        @keyframes shimmer {
+            0% { opacity: 0.45; }
+            50% { opacity: 0.85; }
+            100% { opacity: 0.45; }
+        }
+        .skeleton-shimmer {
+            animation: shimmer 1.5s ease-in-out infinite;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(93, 107, 102, 0.4); border-radius: 9999px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col pb-24">
+<body class="min-h-screen flex flex-col pb-28">
 
-    <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-3 sm:px-4 lg:px-8 py-2.5 transition-colors">
-        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2.5">
-            
-            <!-- Brand & Device Name -->
-            <div class="flex items-center space-x-2.5">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20 shrink-0">
-                    <i data-lucide="shield-check" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h1 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight leading-tight flex items-center gap-1.5">
-                        SmartVest <span class="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 border border-brand-200 dark:border-brand-800">Air Flow</span>
-                    </h1>
-                    <div class="flex items-center space-x-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        <span>ESP32-S3 BLE</span>
-                        <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-700"></span>
-                        <span id="vest-id" class="text-brand-600 dark:text-brand-400 font-semibold">SmartVest-Test</span>
-                    </div>
-                </div>
+    <!-- =========================================================================
+         SECTION 2: TOP STATUS BAR (แถบสถานะด้านบน สูง 56px สไตล์ Calm Utility)
+         ========================================================================= -->
+    <header class="sticky top-0 z-40 glass-top-bar h-14 sm:h-16 px-3 sm:px-6 transition-colors flex items-center justify-between gap-2">
+        
+        <!-- Left: Logo & Device Name + Connection Pill -->
+        <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <div class="flex items-center space-x-1.5 shrink-0">
+                <span class="text-xl">🦺</span>
+                <span class="font-bold text-sm sm:text-base tracking-tight text-calm-text dark:text-darkCalm-text">SmartVest</span>
             </div>
 
-            <!-- Header Quick Actions -->
-            <div class="flex items-center space-x-1.5 sm:space-x-2">
-                <!-- Equipment BOM Button -->
-                <button onclick="toggleEquipmentModal(true)" class="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all" title="รายการอุปกรณ์ BOM">
-                    <i data-lucide="cpu" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
-                    <span class="hidden sm:inline">อุปกรณ์</span>
+            <!-- Connection Pill (Clickable to connect, Color + Text always) -->
+            <button id="btn-top-conn" onclick="connectBLE()" class="calm-btn flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/20 text-calm-muted dark:text-darkCalm-muted shrink-0" title="แตะเพื่อเชื่อมต่อ Bluetooth">
+                <span id="top-conn-dot" class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span id="top-conn-text" class="text-[11px] sm:text-xs">ยังไม่เชื่อม</span>
+            </button>
+
+            <!-- Active Mode Pill (Always reflects current active controller) -->
+            <div id="top-mode-pill" class="hidden sm:flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-calm-accent/10 text-calm-accentText dark:text-darkCalm-accent border border-calm-accent/25 truncate max-w-[210px]" title="โหมดการควบคุมปัจจุบัน">
+                <span>โหมด: ควบคุมเอง</span>
+            </div>
+        </div>
+
+        <!-- Right: Current Level + Battery Indicator + Actions -->
+        <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+            
+            <!-- Desktop Uptime Counter -->
+            <div id="top-uptime-display" class="hidden lg:flex items-center text-[11px] font-mono text-calm-muted dark:text-darkCalm-muted space-x-1" title="เวลาทำงานของรอบนี้">
+                <span>⏱️</span>
+                <span id="top-uptime-val">00:00:00</span>
+            </div>
+
+            <!-- Current Level Quick Badge -->
+            <div id="top-level-badge" class="px-2.5 py-1 rounded-xl text-xs font-black bg-calm-sub dark:bg-darkCalm-sub text-calm-text dark:text-darkCalm-text border border-calm-muted/20 tabular-nums">
+                OFF · 0%
+            </div>
+
+            <!-- Battery SOC & Temp Indicator (Colored by Threshold) -->
+            <div id="top-battery-badge" class="flex items-center space-x-1.5 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-bold bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/20 tabular-nums">
+                <span id="top-bat-icon">🔋</span>
+                <span id="top-bat-soc">--%</span>
+                <span class="text-calm-muted/40">|</span>
+                <span id="top-bat-temp" class="text-calm-ok dark:text-darkCalm-ok">--.-°C</span>
+            </div>
+
+            <!-- Action Buttons (Min 44x44 px touch targets) -->
+            <div class="flex items-center space-x-1">
+                <!-- Theme Toggle Button -->
+                <button id="btn-theme-toggle" onclick="toggleTheme()" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub" title="สลับธีม สว่าง/มืด">
+                    <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
                 </button>
 
-                <!-- Help '?' Button -->
-                <button onclick="toggleHelpModal(true)" class="flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-all" title="คู่มือการใช้งาน">
+                <!-- Help Quick Guide '?' -->
+                <button onclick="toggleHelpModal(true)" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub font-bold text-base" title="คู่มือการใช้งาน">
                     ?
                 </button>
 
-                <!-- Developer Tools Button -->
-                <button onclick="toggleDevModal(true)" class="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all" title="เครื่องมือผู้พัฒนา">
-                    <i data-lucide="wrench" class="w-4 h-4 text-amber-500"></i>
-                    <span class="hidden sm:inline">ผู้พัฒนา</span>
-                </button>
-
-                <!-- BLE Status Chip / Connect Button -->
-                <button id="btn-ble-connect" onclick="connectBLE()" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-all">
-                    <span id="ble-ping-dot" class="relative flex h-2 w-2">
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>
-                    </span>
-                    <span id="ble-status-text">เชื่อมต่อ BLE</span>
-                </button>
-
-                <!-- Theme Toggle Button -->
-                <button id="theme-toggle-btn" onclick="toggleTheme()" class="flex items-center justify-center p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 border border-slate-200 dark:border-slate-700 transition-all" title="สลับธีม สว่าง/มืด">
-                    <i id="theme-icon" data-lucide="moon" class="w-4 h-4"></i>
+                <!-- More Menu '⋯' (Hosts Developer Tools, Clean on all devices) -->
+                <button onclick="toggleDevModal(true)" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub font-black text-lg tracking-tighter" title="เมนูเพิ่มเติม / เครื่องมือผู้พัฒนา">
+                    ⋯
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Disconnect Banner Warning -->
-    <div id="disconn-alert" class="hidden bg-rose-50 dark:bg-rose-950/70 border-b border-rose-200 dark:border-rose-900 px-4 py-2 text-xs sm:text-sm font-semibold text-rose-800 dark:text-rose-200 text-center flex items-center justify-center gap-2">
-        <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-600 shrink-0"></i>
-        <span>ขาดการเชื่อมต่อ Bluetooth! พัดลมอาจยังคงเป่าลมอยู่ที่ค่าล่าสุด แตะเชื่อมต่อใหม่เพื่อสั่งการ</span>
+    <div id="disconn-alert" class="hidden bg-calm-cut/10 border-b border-calm-cut/20 px-4 py-2.5 text-xs sm:text-sm font-semibold text-calm-cut dark:text-darkCalm-cut text-center flex items-center justify-center gap-2">
+        <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
+        <span>ขาดการเชื่อมต่อ Bluetooth! พัดลมอาจยังคงทำงานอยู่ที่ค่าล่าสุด แตะแถบสถานะด้านบนเพื่อเชื่อมต่อใหม่</span>
     </div>
 
-    <!-- Main Content Flow -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 space-y-4 sm:space-y-6">
 
-        <!-- Top Layer: Hero Status Banner (Full-Width, High Visibility from Distance) -->
-        <div id="hero-status-card" class="glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-emerald-500 transition-colors">
-            <div class="flex items-center justify-between mb-1.5">
-                <div class="flex items-center gap-2.5">
-                    <span id="hero-icon" class="text-2xl">🟢</span>
+        <!-- =========================================================================
+             SECTION 4: FULL-WIDTH HERO STATUS CARD (มองเห็นชัดจากระยะไกล)
+             ========================================================================= -->
+        <div id="hero-status-card" class="calm-card p-4 sm:p-6 border-l-[6px] border-l-calm-ok transition-colors">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+                <div class="flex items-center space-x-3">
+                    <span id="hero-icon" class="text-2xl sm:text-3xl">🟢</span>
                     <div>
-                        <h2 id="hero-title" class="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white leading-tight">พร้อมใช้งาน (สแตนด์บาย)</h2>
-                        <span id="hero-tag" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">ระบบปกติ</span>
+                        <h2 id="hero-title" class="text-lg sm:text-2xl font-extrabold text-calm-text dark:text-darkCalm-text tracking-tight leading-tight">
+                            พร้อมใช้งาน (สแตนด์บาย)
+                        </h2>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <span id="hero-tag" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-calm-ok/10 text-calm-ok dark:text-darkCalm-ok border border-calm-ok/30">
+                                ระบบปกติ
+                            </span>
+                            <span id="hero-mobile-mode" class="sm:hidden text-[11px] text-calm-muted dark:text-darkCalm-muted font-medium">
+                                โหมด: ควบคุมเอง
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div id="hero-active-mode-badge" class="text-xs font-bold px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                    โหมด: ควบคุมเอง
+
+                <div id="hero-rpm-summary" class="text-right text-xs text-calm-muted dark:text-darkCalm-muted font-medium">
+                    <div>พัดลมตัวจริง: <b id="hero-rpm-body" class="text-calm-accent dark:text-darkCalm-accent">0%</b></div>
+                    <div>พัดลมบ่าจริง: <b id="hero-rpm-neck" class="text-calm-accent dark:text-darkCalm-accent">0%</b></div>
                 </div>
             </div>
-            <p id="hero-desc" class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
+
+            <p id="hero-desc" class="text-xs sm:text-sm text-calm-muted dark:text-darkCalm-muted leading-relaxed mt-1">
                 พัดลมปิดอยู่ เลือกระดับความแรง 1–5 หรือเปิดระบบอัตโนมัติด้านล่างเพื่อเริ่มระบายความร้อน
             </p>
 
-            <!-- Reset Button inside Hero (Visible only when stopped/tripped) -->
-            <button id="btn-hero-reset" onclick="sendCmd(5, 0)" class="mt-3 w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 hidden">
+            <!-- Reset Action Button inside Hero (Visible only when stopped/tripped) -->
+            <button id="btn-hero-reset" onclick="sendCmd(5, 0)" class="calm-btn mt-3.5 w-full py-3 px-4 rounded-xl bg-calm-cut text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 hidden">
                 <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
                 <span>รีเซ็ตระบบ (RESET) เพื่อเริ่มทำงานใหม่</span>
             </button>
         </div>
 
-        <!-- Row 2: 3D Fan Scene (~60%) + Combined Fan Control Box (~40%) -->
+        <!-- =========================================================================
+             SECTION 4 & 5: MIDDLE ROW (3D Scene ~60% | Fan Control Box ~40%)
+             ========================================================================= -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
 
-            <!-- 3D Fan Assemblies Scene (7 Cols ~60%) -->
-            <div class="lg:col-span-7 glass-card rounded-2xl p-3 sm:p-4 lg:p-5 flex flex-col relative overflow-hidden transition-colors">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-2 z-10">
+            <!-- 3D Fans Scene (No auto-rotation, Inertia, Ghost Disc, Airflow, Tap Inspector) -->
+            <div class="lg:col-span-7 calm-card p-3 sm:p-4 lg:p-5 flex flex-col relative overflow-hidden transition-colors">
+                <div class="flex items-center justify-between mb-2 z-10">
                     <div>
-                        <h2 class="text-xs sm:text-sm font-bold text-slate-800 dark:text-white flex items-center gap-1.5 sm:gap-2">
-                            <i data-lucide="fan" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
-                            ชุดพัดลม 3D ตามคำสั่งจริง (Real Fans View)
+                        <h2 class="text-xs sm:text-sm font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-1.5">
+                            <i data-lucide="fan" class="w-4 h-4 text-calm-accent dark:text-darkCalm-accent"></i>
+                            ชุดพัดลม 3 มิติตามคำสั่งจริง (Physics & Airflow)
                         </h2>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">พัดลมตัว 70mm (A/B), บ่า 40mm, แบต 30mm หมุนตามค่าจริง</p>
+                        <p class="text-[11px] text-calm-muted dark:text-darkCalm-muted">หมุนตามแรงลมจริง มีความเฉื่อย เร่ง/ผ่อนสมจริง</p>
                     </div>
 
-                    <!-- 3D Actions Overlay -->
-                    <div class="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-                        <button onclick="resetCamera()" class="p-1.5 text-slate-600 dark:text-slate-300 hover:text-brand-600 hover:bg-white dark:hover:bg-slate-700 rounded-lg transition" title="รีเซ็ตมุมกล้อง">
-                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-                        </button>
-                    </div>
+                    <!-- Reset Angle Button -->
+                    <button onclick="resetCameraView()" class="calm-btn px-2.5 py-1 text-xs font-semibold rounded-lg bg-calm-sub dark:bg-darkCalm-sub text-calm-muted dark:text-darkCalm-muted border border-calm-muted/20 hover:text-calm-accent flex items-center gap-1" title="กลับมุมเฉียงหน้าเริ่มต้น">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        <span>มุมเดิม</span>
+                    </button>
                 </div>
 
-                <!-- 3D Canvas Container -->
-                <div id="canvas-container" class="w-full h-[280px] sm:h-[340px] lg:h-[380px] rounded-xl bg-gradient-to-b from-slate-50 to-brand-50/20 dark:from-slate-900/80 dark:to-slate-800/50 relative flex items-center justify-center overflow-hidden border border-slate-100 dark:border-slate-800 cursor-grab active:cursor-grabbing touch-none">
+                <!-- 3D Canvas Box -->
+                <div id="canvas-container" class="w-full h-[300px] sm:h-[350px] lg:h-[390px] rounded-2xl bg-calm-sub/60 dark:bg-darkCalm-sub/40 relative flex items-center justify-center overflow-hidden border border-calm-muted/10 cursor-grab active:cursor-grabbing touch-none">
                     <canvas id="three-canvas" class="w-full h-full"></canvas>
 
-                    <!-- 2D Fallback Overlay (Shown if WebGL unsupported) -->
-                    <div id="fallback-2d" class="hidden absolute inset-0 bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4 text-center z-20">
-                        <i data-lucide="info" class="w-8 h-8 text-amber-500 mb-2"></i>
-                        <p class="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">กำลังแสดงผลแบบ 2D (WebGL ไม่รองรับในเบราว์เซอร์นี้)</p>
+                    <!-- 2D SVG/CSS Fallback (Shown if WebGL unsupported) -->
+                    <div id="fallback-2d" class="hidden absolute inset-0 bg-calm-card dark:bg-darkCalm-card flex flex-col items-center justify-center p-4 text-center z-20">
+                        <i data-lucide="info" class="w-8 h-8 text-calm-warn mb-2"></i>
+                        <p class="text-xs sm:text-sm font-bold text-calm-text dark:text-darkCalm-text">กำลังแสดงผลแบบ 2D (WebGL ไม่รองรับในเบราว์เซอร์นี้)</p>
                         <div class="flex items-center justify-center gap-6 mt-4">
                             <div class="flex flex-col items-center">
-                                <div id="fan-2d-body" class="w-12 h-12 rounded-full border-2 border-brand-500 flex items-center justify-center"><i data-lucide="fan" class="w-7 h-7 text-brand-600"></i></div>
+                                <div id="fan-2d-body" class="w-12 h-12 rounded-full border-2 border-calm-accent flex items-center justify-center"><i data-lucide="fan" class="w-7 h-7 text-calm-accent"></i></div>
                                 <span class="text-[10px] mt-1 font-semibold">พัดลมตัว</span>
                             </div>
                             <div class="flex flex-col items-center">
-                                <div id="fan-2d-neck" class="w-10 h-10 rounded-full border-2 border-brand-400 flex items-center justify-center"><i data-lucide="fan" class="w-5 h-5 text-brand-500"></i></div>
+                                <div id="fan-2d-neck" class="w-10 h-10 rounded-full border-2 border-calm-accent/80 flex items-center justify-center"><i data-lucide="fan" class="w-5 h-5 text-calm-accent"></i></div>
                                 <span class="text-[10px] mt-1 font-semibold">พัดลมบ่า</span>
                             </div>
                             <div class="flex flex-col items-center">
-                                <div id="fan-2d-bat" class="w-8 h-8 rounded-full border-2 border-amber-500 flex items-center justify-center"><i data-lucide="fan" class="w-4 h-4 text-amber-500"></i></div>
+                                <div id="fan-2d-bat" class="w-8 h-8 rounded-full border-2 border-calm-warn flex items-center justify-center"><i data-lucide="fan" class="w-4 h-4 text-calm-warn"></i></div>
                                 <span class="text-[10px] mt-1 font-semibold">พัดลมแบต</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Gesture Hint -->
-                    <div class="absolute bottom-2.5 left-2.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/80 rounded-lg px-2 py-1 text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1 pointer-events-none">
-                        <i data-lucide="mouse-pointer-2" class="w-3 h-3 text-brand-600 dark:text-brand-400"></i> ลากเพื่อหมุนมุมมองพัดลม
+                    <!-- Drag Gesture Hint -->
+                    <div class="absolute bottom-2.5 left-2.5 bg-calm-card/85 dark:bg-darkCalm-card/85 backdrop-blur-sm border border-calm-muted/15 rounded-lg px-2 py-1 text-[10px] text-calm-muted dark:text-darkCalm-muted flex items-center gap-1 pointer-events-none">
+                        <i data-lucide="mouse-pointer-2" class="w-3 h-3 text-calm-accent"></i> ลากหมุนดูได้ (คืนมุมเดิมใน 4 วินาที)
                     </div>
 
-                    <!-- Live RPM Indicator Badge -->
-                    <div class="absolute top-2.5 right-2.5 bg-white/85 dark:bg-slate-900/85 backdrop-blur-sm border border-slate-200/80 dark:border-slate-700/80 rounded-xl px-2.5 py-1 text-right pointer-events-none">
-                        <div class="text-[9px] uppercase font-bold text-slate-400">พัดลมตัวจริง</div>
-                        <div id="3d-fan-badge" class="text-xs font-black text-brand-600 dark:text-brand-400">0% (0 RPM)</div>
+                    <!-- Fan Inspector Overlay (Appears when user taps a fan in 3D) -->
+                    <div id="fan-inspector-card" class="hidden absolute top-2.5 left-2.5 bg-calm-card dark:bg-darkCalm-card border border-calm-muted/20 shadow-lg rounded-xl p-3 z-20 text-xs space-y-1 max-w-[210px]">
+                        <div class="flex items-center justify-between font-bold text-calm-text dark:text-darkCalm-text">
+                            <span id="inspect-fan-name">พัดลมตัว (70mm)</span>
+                            <button onclick="hideFanInspector()" class="text-calm-muted hover:text-calm-text font-bold px-1">✕</button>
+                        </div>
+                        <div class="text-[11px] text-calm-muted dark:text-darkCalm-muted">
+                            <div>ความเร็ว: <b id="inspect-fan-pct" class="text-calm-accent">0%</b></div>
+                            <div>ความเร็วรอบ: <b id="inspect-fan-rpm">0 RPM</b> <span class="text-[9px] text-calm-muted">(ประมาณการ)</span></div>
+                            <div>สถานะ: <span id="inspect-fan-status" class="font-semibold text-calm-ok">ปิด</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Live RPM Badge -->
+                    <div class="absolute top-2.5 right-2.5 bg-calm-card/90 dark:bg-darkCalm-card/90 backdrop-blur-sm border border-calm-muted/15 rounded-xl px-2.5 py-1 text-right pointer-events-none">
+                        <div class="text-[9px] uppercase font-bold text-calm-muted">พัดลมตัวหลัก</div>
+                        <div id="3d-fan-badge" class="text-xs font-black text-calm-accent dark:text-darkCalm-accent tabular-nums">0% (0 RPM ประมาณการ)</div>
                     </div>
                 </div>
 
-                <!-- 3 Fan Labels Footer -->
-                <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-center text-[11px] font-semibold text-slate-600 dark:text-slate-300">
-                    <div>พัดลมตัว 70mm: <b id="lbl-rpm-body" class="text-brand-600 dark:text-brand-400">0%</b></div>
-                    <div>พัดลมบ่า 40mm: <b id="lbl-rpm-neck" class="text-brand-600 dark:text-brand-400">0%</b></div>
-                    <div>พัดลมแบต 30mm: <b id="lbl-rpm-bat" class="text-amber-500">0%</b></div>
+                <!-- 3 Fans Telemetry Footer Summary -->
+                <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-calm-muted/10 text-center text-[11px] font-semibold text-calm-muted dark:text-darkCalm-muted tabular-nums">
+                    <div>ตัว 70mm: <b id="lbl-rpm-body" class="text-calm-text dark:text-darkCalm-text">0%</b></div>
+                    <div>บ่า 40mm: <b id="lbl-rpm-neck" class="text-calm-text dark:text-darkCalm-text">0%</b></div>
+                    <div>แบต 30mm: <b id="lbl-rpm-bat" class="text-calm-warn">0%</b></div>
                 </div>
             </div>
 
-            <!-- Fan Control Box (Tabs: [ระดับ] [อัตโนมัติ] [โปรแกรม]) (5 Cols ~40%) -->
-            <div class="lg:col-span-5 glass-card rounded-2xl p-4 sm:p-5 space-y-4 transition-colors">
+            <!-- Combined Fan Control Box (~40%) with Segmented Control -->
+            <div class="lg:col-span-5 calm-card p-4 sm:p-5 space-y-4 transition-colors">
                 
-                <!-- Main Control Box Header & Tabs -->
-                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
-                    <div class="flex items-center space-x-1">
-                        <button id="ctrl-tab-lvl" onclick="switchControlTab('lvl')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 transition-all">
-                            ระดับ (Manual)
-                        </button>
-                        <button id="ctrl-tab-auto" onclick="switchControlTab('auto')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all">
-                            อัตโนมัติ (Auto)
-                        </button>
-                        <button id="ctrl-tab-prog" onclick="switchControlTab('prog')" class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all">
-                            โปรแกรม
-                        </button>
-                    </div>
-                    <span id="ctrl-box-status" class="text-[11px] font-bold text-brand-600 dark:text-brand-400">
-                        OFF (0%)
-                    </span>
+                <!-- Segmented Control [ระดับ] [อัตโนมัติ] [โปรแกรม] (Min 48px height) -->
+                <div class="bg-calm-sub dark:bg-darkCalm-sub p-1 rounded-2xl flex items-center border border-calm-muted/15">
+                    <button id="ctrl-tab-lvl" onclick="switchControlTab('lvl')" class="calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-bold bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text shadow-sm transition-all flex items-center justify-center">
+                        ระดับ (Manual)
+                    </button>
+                    <button id="ctrl-tab-auto" onclick="switchControlTab('auto')" class="calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-semibold text-calm-muted dark:text-darkCalm-muted hover:text-calm-text dark:hover:text-darkCalm-text transition-all flex items-center justify-center">
+                        อัตโนมัติ (Auto)
+                    </button>
+                    <button id="ctrl-tab-prog" onclick="switchControlTab('prog')" class="calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-semibold text-calm-muted dark:text-darkCalm-muted hover:text-calm-text dark:hover:text-darkCalm-text transition-all flex items-center justify-center">
+                        โปรแกรม
+                    </button>
                 </div>
 
-                <!-- Tab 1: ระดับ (Keypad 0-5 & Collapsible Fine Tuning) -->
+                <!-- Pane 1: ระดับ (Manual Keypad 0-5 + Foldable Fine Sliders) -->
                 <div id="pane-ctrl-lvl" class="space-y-4">
-                    <!-- Keypad 3x2 Grid (Each button >= 56x56 px for gloves) -->
-                    <div class="grid grid-cols-3 gap-2" id="level-keypad">
-                        <button class="btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-slate-700 text-white font-bold flex flex-col items-center justify-center p-1 transition-all" data-lvl="0">
-                            <span class="text-lg font-black leading-tight">OFF</span>
+                    <!-- Keypad Grid 3x2 (Buttons >= 56x56 px for gloves) -->
+                    <div class="grid grid-cols-3 gap-2.5" id="level-keypad">
+                        <button class="btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-muted/30 bg-calm-muted/20 text-calm-text dark:text-darkCalm-text font-bold flex flex-col items-center justify-center p-1" data-lvl="0">
+                            <span class="text-xl font-black leading-tight">OFF</span>
                             <span class="text-[10px] opacity-80">ปิดพัดลม</span>
                         </button>
-                        <button class="btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold flex flex-col items-center justify-center p-1 transition-all" data-lvl="1">
-                            <span class="text-xl font-black leading-tight">1</span>
-                            <span class="text-[10px] text-slate-500 dark:text-slate-400">20%</span>
+                        <button class="btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text font-bold flex flex-col items-center justify-center p-1" data-lvl="1">
+                            <span class="text-2xl font-black leading-tight">1</span>
+                            <span class="text-[10px] text-calm-muted">20%</span>
                         </button>
-                        <button class="btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold flex flex-col items-center justify-center p-1 transition-all" data-lvl="2">
-                            <span class="text-xl font-black leading-tight">2</span>
-                            <span class="text-[10px] text-slate-500 dark:text-slate-400">40%</span>
+                        <button class="btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text font-bold flex flex-col items-center justify-center p-1" data-lvl="2">
+                            <span class="text-2xl font-black leading-tight">2</span>
+                            <span class="text-[10px] text-calm-muted">40%</span>
                         </button>
-                        <button class="btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold flex flex-col items-center justify-center p-1 transition-all" data-lvl="3">
-                            <span class="text-xl font-black leading-tight">3</span>
-                            <span class="text-[10px] text-slate-500 dark:text-slate-400">60%</span>
+                        <button class="btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text font-bold flex flex-col items-center justify-center p-1" data-lvl="3">
+                            <span class="text-2xl font-black leading-tight">3</span>
+                            <span class="text-[10px] text-calm-muted">60%</span>
                         </button>
-                        <button class="btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold flex flex-col items-center justify-center p-1 transition-all" data-lvl="4">
-                            <span class="text-xl font-black leading-tight">4</span>
-                            <span class="text-[10px] text-slate-500 dark:text-slate-400">80%</span>
+                        <button class="btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text font-bold flex flex-col items-center justify-center p-1" data-lvl="4">
+                            <span class="text-2xl font-black leading-tight">4</span>
+                            <span class="text-[10px] text-calm-muted">80%</span>
                         </button>
-                        <button class="btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold flex flex-col items-center justify-center p-1 transition-all" data-lvl="5">
-                            <span class="text-xl font-black leading-tight">5</span>
-                            <span class="text-[10px] text-slate-500 dark:text-slate-400">100%</span>
+                        <button class="btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text font-bold flex flex-col items-center justify-center p-1" data-lvl="5">
+                            <span class="text-2xl font-black leading-tight">5</span>
+                            <span class="text-[10px] text-calm-muted">100%</span>
                         </button>
                     </div>
 
-                    <!-- Collapsible Fine Tuning Sliders -->
-                    <details class="text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
-                        <summary class="font-bold text-slate-700 dark:text-slate-300 cursor-pointer py-1 flex items-center justify-between">
+                    <!-- Foldable Fine Tuning Sliders -->
+                    <details class="text-xs pt-1 border-t border-calm-muted/10">
+                        <summary class="font-bold text-calm-text dark:text-darkCalm-text cursor-pointer py-1.5 flex items-center justify-between">
                             <span>💨 ปรับละเอียดแยกตัว/บ่า</span>
-                            <span class="text-brand-600 dark:text-brand-400 text-[11px]">เปิดสไลเดอร์ ▼</span>
+                            <span class="text-calm-accent dark:text-darkCalm-accent text-[11px]">เปิดสไลเดอร์ ▼</span>
                         </summary>
                         <div class="space-y-3 pt-2">
-                            <!-- Body Slider -->
                             <div>
                                 <div class="flex justify-between items-center text-xs mb-1">
-                                    <span class="font-semibold text-slate-700 dark:text-slate-300">พัดลมตัว 70mm (0–100%)</span>
-                                    <span id="disp-slider-b" class="font-bold text-brand-600 dark:text-brand-400">0%</span>
+                                    <span class="font-semibold text-calm-text dark:text-darkCalm-text">พัดลมตัว 70mm (0–100%)</span>
+                                    <span id="disp-slider-b" class="font-bold text-calm-accent dark:text-darkCalm-accent">0%</span>
                                 </div>
-                                <input id="slider-b" type="range" min="0" max="100" value="0" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-600" oninput="handleSliderB(this.value)">
+                                <input id="slider-b" type="range" min="0" max="100" value="0" class="w-full h-2 bg-calm-sub dark:bg-darkCalm-sub rounded-lg appearance-none cursor-pointer accent-calm-accent" oninput="handleSliderB(this.value)">
                             </div>
-                            <!-- Neck Slider (Capped <= 70%) -->
                             <div>
                                 <div class="flex justify-between items-center text-xs mb-1">
-                                    <span class="font-semibold text-slate-700 dark:text-slate-300">พัดลมบ่า 40mm (จำกัด ≤ 70%)</span>
-                                    <span id="disp-slider-n" class="font-bold text-brand-600 dark:text-brand-400">0%</span>
+                                    <span class="font-semibold text-calm-text dark:text-darkCalm-text">พัดลมบ่า 40mm (จำกัด ≤ 70%)</span>
+                                    <span id="disp-slider-n" class="font-bold text-calm-accent dark:text-darkCalm-accent">0%</span>
                                 </div>
-                                <input id="slider-n" type="range" min="0" max="70" value="0" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-brand-600" oninput="handleSliderN(this.value)">
+                                <input id="slider-n" type="range" min="0" max="70" value="0" class="w-full h-2 bg-calm-sub dark:bg-darkCalm-sub rounded-lg appearance-none cursor-pointer accent-calm-accent" oninput="handleSliderN(this.value)">
                             </div>
-                            <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-[11px] flex justify-between font-medium">
+                            <div class="p-2 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[11px] flex justify-between font-medium">
                                 <span>ตัวจริง: <b id="ctrl-tele-b">0%</b></span>
                                 <span>บ่าจริง: <b id="ctrl-tele-n">0%</b></span>
                                 <span>แบตจริง: <b id="ctrl-tele-bat">0%</b></span>
@@ -352,83 +468,119 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                     </details>
                 </div>
 
-                <!-- Tab 2: อัตโนมัติ (Auto Mode & Presets) -->
+                <!-- Pane 2: อัตโนมัติ (Auto Mode & Visual HI Range Maps) -->
                 <div id="pane-ctrl-auto" class="space-y-3.5 hidden">
-                    <!-- Auto Mode Master Switch -->
-                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <!-- Auto Master Switch -->
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/15">
                         <div>
-                            <div class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                                <i data-lucide="bot" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
+                            <div class="text-xs font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-1.5">
+                                <i data-lucide="bot" class="w-4 h-4 text-calm-accent dark:text-darkCalm-accent"></i>
                                 <span>ระบบระบายความร้อนอัตโนมัติ</span>
                             </div>
-                            <span id="auto-status-desc" class="text-[11px] text-slate-500 dark:text-slate-400">ปรับระดับพัดลมตามดัชนีความร้อน (HI)</span>
+                            <span id="auto-status-desc" class="text-[11px] text-calm-muted dark:text-darkCalm-muted">ปรับระดับตามดัชนีความร้อน HI</span>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="auto-master-switch" class="sr-only peer" onchange="toggleAutoMaster(this.checked)">
-                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-brand-600"></div>
+                            <div class="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-calm-accent"></div>
                         </label>
                     </div>
 
                     <!-- Auto Pause Alert & Resume Button -->
-                    <div id="auto-paused-card" class="hidden p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 space-y-2">
+                    <div id="auto-paused-card" class="hidden p-3 rounded-2xl bg-calm-warn/15 border border-calm-warn/40 text-xs text-calm-text dark:text-darkCalm-text space-y-2">
                         <div class="flex items-center justify-between font-bold">
-                            <span class="flex items-center gap-1.5"><i data-lucide="pause-circle" class="w-4 h-4 text-amber-600"></i> Auto หยุดชั่วคราว</span>
-                            <span id="auto-pause-reason" class="text-[10px] px-2 py-0.5 rounded bg-amber-200 dark:bg-amber-900 text-amber-800 dark:text-amber-200">ผู้ใช้สั่งหยุด</span>
+                            <span class="flex items-center gap-1.5"><i data-lucide="pause-circle" class="w-4 h-4 text-calm-warn"></i> Auto หยุดชั่วคราว</span>
+                            <span id="auto-pause-reason" class="text-[10px] px-2 py-0.5 rounded bg-calm-warn/25 font-bold text-calm-warn">ผู้ใช้กด STOP</span>
                         </div>
-                        <p class="text-[11px] text-slate-600 dark:text-slate-300">เมื่อพร้อมกลับสู่โหมดอัตโนมัติ กรุณาแตะปุ่มด้านล่าง:</p>
-                        <button onclick="resumeAutoMode()" class="w-full py-2 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="play" class="w-3.5 h-3.5"></i> กลับไปทำงานอัตโนมัติ
+                        <p class="text-[11px] text-calm-muted dark:text-darkCalm-muted">ระบบหยุด Auto ไว้เพื่อความปลอดภัย เมื่อพร้อมให้แตะปุ่มด้านล่าง:</p>
+                        <button onclick="resumeAutoMode()" class="calm-btn w-full py-2.5 px-3 rounded-xl bg-calm-warn text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                            <i data-lucide="play" class="w-3.5 h-3.5"></i> กลับไปอัตโนมัติ
                         </button>
                     </div>
 
-                    <!-- Active Preset Selection -->
+                    <!-- Presets List with Visual HI Range Map -->
                     <div>
-                        <div class="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                            <span>พรีเซ็ตการทำงาน (เลือก 1 อัน):</span>
-                            <button onclick="openCreatePresetModal()" class="text-brand-600 dark:text-brand-400 hover:underline text-[11px] font-semibold">+ สร้างพรีเซ็ต</button>
+                        <div class="flex items-center justify-between text-xs font-bold text-calm-text dark:text-darkCalm-text mb-1.5">
+                            <span>พรีเซ็ตการทำงาน:</span>
+                            <button onclick="openCreatePresetModal()" class="text-calm-accent dark:text-darkCalm-accent hover:underline text-[11px] font-semibold">+ เพิ่มพรีเซ็ต</button>
                         </div>
-                        <div id="presets-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                            <!-- Populated by JS -->
+                        <div id="presets-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            <!-- Rendered by JS with Visual HI Range Maps -->
                         </div>
                     </div>
 
-                    <!-- Calibration Note for Presets -->
-                    <div class="text-[10px] text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-800/40 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                        * พรีเซ็ตกลางแจ้ง/ในร่ม เป็นค่าสมมติฐานเริ่มต้น ต้องสอบเทียบ (Calibrate) จากการวัดจริง
+                    <div class="text-[10px] text-calm-muted dark:text-darkCalm-muted bg-calm-sub dark:bg-darkCalm-sub p-2 rounded-xl border border-calm-muted/10">
+                        * พรีเซ็ตเริ่มต้นเป็นค่าสมมติฐาน รอการวัดจริงเพื่อสอบเทียบ (Calibrate)
                     </div>
                 </div>
 
-                <!-- Tab 3: โปรแกรม (Multi-phase Programs) -->
-                <div id="pane-ctrl-prog" class="space-y-3 hidden">
-                    <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+                <!-- Pane 3: โปรแกรม (Multi-phase Visual Phases & Countdown) -->
+                <div id="pane-ctrl-prog" class="space-y-3.5 hidden">
+                    <div class="flex items-center justify-between p-3.5 rounded-2xl bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/15">
                         <div>
-                            <div id="prog-active-title" class="text-xs font-bold text-slate-800 dark:text-white">ไม่ได้รันโปรแกรม</div>
-                            <span class="text-[10px] text-slate-400">เลือกรันโปรแกรมด้านล่าง</span>
+                            <div id="prog-active-title" class="text-xs font-bold text-calm-text dark:text-darkCalm-text">ไม่ได้รันโปรแกรม</div>
+                            <span class="text-[10px] text-calm-muted dark:text-darkCalm-muted">เลือกรันโปรแกรมด้านล่าง</span>
                         </div>
-                        <div id="prog-countdown-timer" class="text-base font-black text-brand-600 dark:text-brand-400 font-mono">--:--</div>
+                        <div id="prog-countdown-timer" class="text-lg font-black text-calm-accent dark:text-darkCalm-accent font-mono tabular-nums">--:--</div>
                     </div>
 
-                    <div class="grid grid-cols-2 gap-2">
-                        <button id="btn-prog-0" onclick="startProgram(0)" class="btn-touch-active py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all">
-                            ▶ Pre-cool
-                        </button>
-                        <button id="btn-prog-1" onclick="startProgram(1)" class="btn-touch-active py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all">
-                            ▶ Ramp-up
-                        </button>
-                        <button id="btn-prog-2" onclick="startProgram(2)" class="btn-touch-active col-span-2 py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all">
-                            ▶ Custom (ตามกำหนด 4 เฟส)
-                        </button>
-                        <button onclick="sendCmd(8, 0)" class="btn-touch-active col-span-2 py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 transition-all">
+                    <!-- Visual Program Cards with Phase Sequence Bars -->
+                    <div class="space-y-2.5">
+                        <!-- Pre-cool Card -->
+                        <div id="card-prog-0" onclick="startProgram(0)" class="calm-btn p-3 rounded-2xl border border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card hover:border-calm-accent cursor-pointer space-y-1.5">
+                            <div class="flex items-center justify-between text-xs font-bold text-calm-text dark:text-darkCalm-text">
+                                <span>▶ Pre-cool (เร่งเย็นเร็ว)</span>
+                                <span class="text-[10px] text-calm-muted">รวม 13 นาที + ต่อเนื่อง</span>
+                            </div>
+                            <!-- Phase Sequence Diagram Bar -->
+                            <div class="w-full h-3 rounded-full bg-calm-sub dark:bg-darkCalm-sub overflow-hidden flex gap-0.5 p-0.5">
+                                <div class="h-full rounded-l-full bg-rose-500" style="width: 25%;" title="เฟส 1: ระดับ 5 (3 นาที)"></div>
+                                <div class="h-full bg-teal-500" style="width: 50%;" title="เฟส 2: ระดับ 3 (10 นาที)"></div>
+                                <div class="h-full rounded-r-full bg-sky-500" style="width: 25%;" title="เฟส 3: ระดับ 2 (ต่อเนื่อง)"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-calm-muted font-mono">
+                                <span>5 (3น.)</span><span>3 (10น.)</span><span>2 (ต่อเนื่อง)</span>
+                            </div>
+                        </div>
+
+                        <!-- Ramp-up Card -->
+                        <div id="card-prog-1" onclick="startProgram(1)" class="calm-btn p-3 rounded-2xl border border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card hover:border-calm-accent cursor-pointer space-y-1.5">
+                            <div class="flex items-center justify-between text-xs font-bold text-calm-text dark:text-darkCalm-text">
+                                <span>▶ Ramp-up (ค่อยๆ เพิ่มความเย็น)</span>
+                                <span class="text-[10px] text-calm-muted">รวม 10 นาที + ต่อเนื่อง</span>
+                            </div>
+                            <div class="w-full h-3 rounded-full bg-calm-sub dark:bg-darkCalm-sub overflow-hidden flex gap-0.5 p-0.5">
+                                <div class="h-full rounded-l-full bg-blue-400" style="width: 35%;" title="เฟส 1: ระดับ 1 (5 นาที)"></div>
+                                <div class="h-full bg-sky-500" style="width: 35%;" title="เฟส 2: ระดับ 2 (5 นาที)"></div>
+                                <div class="h-full rounded-r-full bg-teal-500" style="width: 30%;" title="เฟส 3: ระดับ 3 (ต่อเนื่อง)"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-calm-muted font-mono">
+                                <span>1 (5น.)</span><span>2 (5น.)</span><span>3 (ต่อเนื่อง)</span>
+                            </div>
+                        </div>
+
+                        <!-- Custom Card -->
+                        <div id="card-prog-2" onclick="startProgram(2)" class="calm-btn p-3 rounded-2xl border border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card hover:border-calm-accent cursor-pointer space-y-1">
+                            <div class="flex items-center justify-between text-xs font-bold text-calm-text dark:text-darkCalm-text">
+                                <span>▶ Custom (ตามกำหนด 4 เฟส)</span>
+                                <span class="text-[10px] text-calm-accent">รันค่าที่บันทึกไว้</span>
+                            </div>
+                            <p class="text-[11px] text-calm-muted">ทำงานตามตาราง 4 เฟสที่บันทึกไว้ใน NVS</p>
+                        </div>
+
+                        <button onclick="sendCmd(8, 0); showToast('หยุดโปรแกรมแล้ว');" class="calm-btn w-full py-2 px-3 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:bg-calm-muted/15 text-xs font-semibold text-calm-muted dark:text-darkCalm-muted">
                             ⏹ หยุดโปรแกรมอัตโนมัติ
                         </button>
                     </div>
 
                     <!-- Custom Program Accordion -->
-                    <details class="text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
-                        <summary class="font-bold text-slate-700 dark:text-slate-300 cursor-pointer py-1">⚙️ ปรับแต่งตาราง Custom (บันทึก NVS)</summary>
+                    <details class="text-xs pt-1 border-t border-calm-muted/10">
+                        <summary class="font-bold text-calm-text dark:text-darkCalm-text cursor-pointer py-1.5 flex justify-between">
+                            <span>⚙️ ตั้งค่าตาราง Custom (บันทึก NVS)</span>
+                            <span class="text-calm-accent text-[11px]">เปิดตาราง ▼</span>
+                        </summary>
                         <table class="w-full text-center mt-2 border-collapse text-[11px]">
                             <thead>
-                                <tr class="text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                <tr class="text-calm-muted border-b border-calm-muted/15">
                                     <th class="py-1">เฟส</th>
                                     <th>ระดับ</th>
                                     <th>นาที</th>
@@ -438,7 +590,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                                 <!-- Populated by JS -->
                             </tbody>
                         </table>
-                        <button onclick="saveCustomProgram()" class="mt-2.5 w-full py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs transition-all">
+                        <button onclick="saveCustomProgram()" class="calm-btn mt-2.5 w-full py-2.5 rounded-xl bg-calm-accent text-white font-bold text-xs shadow-sm">
                             💾 บันทึก Custom ลงเสื้อกั๊ก
                         </button>
                     </details>
@@ -447,271 +599,231 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             </div>
         </div>
 
-        <!-- Row 3: 5 Vital Metric Cards (Varied Size by Importance) & Advice Box -->
-        <div class="space-y-3 sm:space-y-4">
+        <!-- =========================================================================
+             SECTION 7: METRICS CARDS & REAL-TIME GRAPH
+             ========================================================================= -->
+        <div class="space-y-4">
             
-            <!-- Contextual Assistant Advice Card (Non-Medical) -->
-            <div id="advice-box" class="glass-card rounded-2xl p-3 sm:p-3.5 border-l-4 border-l-brand-500 flex items-start gap-2.5 transition-colors">
-                <span id="advice-icon" class="text-lg shrink-0 mt-0.5">💡</span>
-                <div class="flex-1 min-w-0">
-                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">คำแนะนำการใช้งาน</div>
-                    <p id="advice-text" class="text-xs sm:text-[13px] font-medium text-slate-700 dark:text-slate-200 leading-snug">
-                        เริ่มต้นใช้งาน: แตะเชื่อมต่อ BLE → เลือกระดับความเย็น 1–5 → แตะ STOP เมื่อต้องการหยุด
-                    </p>
-                </div>
-                <button onclick="dismissAdvice()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-sm font-bold px-1" title="ปิดคำแนะนำนี้">✕</button>
-            </div>
-
-            <!-- 5 Vital Metric Cards (HI & Ta largest) -->
-            <div class="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
+            <!-- 5 Vital Metric Cards (Different size by importance, HI Largest) -->
+            <div class="grid grid-cols-2 md:grid-cols-6 lg:grid-cols-12 gap-3 sm:gap-4 items-stretch">
                 
                 <!-- Card 1: Heat Index (HI) - LARGEST (col-span-2 md:col-span-3 lg:col-span-4) -->
-                <div class="col-span-2 md:col-span-3 lg:col-span-4 glass-card rounded-2xl p-4 bg-gradient-to-br from-white to-amber-50/40 dark:from-slate-900 dark:to-amber-950/20 border-amber-200 dark:border-amber-900/60 flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                        <span class="text-xs sm:text-sm font-bold flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                <div class="col-span-2 md:col-span-3 lg:col-span-4 calm-card p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div class="flex items-center justify-between text-calm-muted dark:text-darkCalm-muted">
+                        <span class="text-xs sm:text-sm font-bold flex items-center gap-1.5 text-calm-accentText dark:text-darkCalm-accent">
                             ☀️ ดัชนีความร้อน (Heat Index)
                         </span>
-                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">จำลอง</span>
+                        <span class="sim-badge text-[10px] font-bold px-2 py-0.5 rounded-full bg-calm-sub dark:bg-darkCalm-sub text-calm-muted">จำลอง</span>
                     </div>
-                    <div class="my-2 flex items-baseline gap-1.5">
-                        <span id="val-hi" class="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400 font-mono">--.-</span>
-                        <span class="text-sm font-bold text-slate-400">°C</span>
-                        <span id="hi-risk-tag" class="ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">ปกติ</span>
+
+                    <!-- Huge HI Digits (56–64 px) -->
+                    <div class="my-3 flex items-baseline gap-2">
+                        <span id="val-hi" class="text-5xl sm:text-6xl font-black text-calm-text dark:text-darkCalm-text font-mono tabular-nums leading-none">--.-</span>
+                        <span class="text-base font-bold text-calm-muted">°C</span>
+                        <span id="hi-risk-tag" class="ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-calm-ok/15 text-calm-ok dark:text-darkCalm-ok border border-calm-ok/30">
+                            ปกติ
+                        </span>
                     </div>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">คำนวณจากอุณหภูมิและความชื้นรอบตัว (สูตร Rothfusz)</p>
+
+                    <!-- Subtle Temperature Spectrum Bar at Bottom -->
+                    <div class="space-y-1">
+                        <div class="w-full h-2 rounded-full bg-calm-sub dark:bg-darkCalm-sub overflow-hidden flex">
+                            <div class="h-full bg-emerald-500" style="width: 35%;" title="ปกติ (<32°C)"></div>
+                            <div class="h-full bg-amber-400" style="width: 25%;" title="ระวัง (32-37°C)"></div>
+                            <div class="h-full bg-orange-500" style="width: 20%;" title="อันตราย (38-41°C)"></div>
+                            <div class="h-full bg-rose-600" style="width: 20%;" title="อันตรายมาก (>41°C)"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-calm-muted">
+                            <span>ปกติ</span>
+                            <span>ระวัง</span>
+                            <span>อันตราย</span>
+                            <span>สูงมาก</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Card 2: Air Temp (Ta) - LARGE (col-span-1 md:col-span-3 lg:col-span-3) -->
-                <div class="col-span-1 md:col-span-3 lg:col-span-3 glass-card rounded-2xl p-3.5 flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                        <span class="text-[11px] font-semibold flex items-center gap-1">🌡️ อากาศ</span>
-                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">จำลอง</span>
+                <div class="col-span-1 md:col-span-3 lg:col-span-3 calm-card p-4 sm:p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-calm-muted dark:text-darkCalm-muted">
+                        <span class="text-xs font-semibold flex items-center gap-1">🌡️ อากาศรอบตัว</span>
+                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-calm-sub dark:bg-darkCalm-sub text-calm-muted">จำลอง</span>
                     </div>
-                    <div class="my-1.5 flex items-baseline gap-1">
-                        <span id="val-ta" class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white font-mono">--.-</span>
-                        <span class="text-xs font-semibold text-slate-400">°C</span>
+                    <div class="my-2 flex items-baseline gap-1">
+                        <span id="val-ta" class="text-3xl sm:text-4xl font-extrabold text-calm-text dark:text-darkCalm-text font-mono tabular-nums leading-none">--.-</span>
+                        <span class="text-sm font-semibold text-calm-muted">°C</span>
                     </div>
-                    <span class="text-[10px] text-slate-400">เซนเซอร์แวดล้อม</span>
+                    <span class="text-[11px] text-calm-muted">อุณหภูมิเซนเซอร์</span>
                 </div>
 
                 <!-- Card 3: Air Humidity (Rh) (col-span-1 md:col-span-2 lg:col-span-2) -->
-                <div class="col-span-1 md:col-span-2 lg:col-span-2 glass-card rounded-2xl p-3.5 flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                        <span class="text-[11px] font-semibold flex items-center gap-1">💧 ความชื้น</span>
-                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">จำลอง</span>
+                <div class="col-span-1 md:col-span-2 lg:col-span-2 calm-card p-4 sm:p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-calm-muted dark:text-darkCalm-muted">
+                        <span class="text-xs font-semibold flex items-center gap-1">💧 ความชื้น</span>
+                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-calm-sub dark:bg-darkCalm-sub text-calm-muted">จำลอง</span>
                     </div>
-                    <div class="my-1.5 flex items-baseline gap-1">
-                        <span id="val-rh" class="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">--</span>
-                        <span class="text-xs font-semibold text-slate-400">%</span>
+                    <div class="my-2 flex items-baseline gap-1">
+                        <span id="val-rh" class="text-3xl font-extrabold text-calm-text dark:text-darkCalm-text font-mono tabular-nums leading-none">--</span>
+                        <span class="text-sm font-semibold text-calm-muted">%</span>
                     </div>
-                    <span class="text-[10px] text-slate-400">ความชื้นสัมพัทธ์</span>
+                    <span class="text-[11px] text-calm-muted">ความชื้นสัมพัทธ์</span>
                 </div>
 
-                <!-- Card 4: Battery Temp (Tb) (col-span-1 md:col-span-2 lg:col-span-2) -->
-                <div id="card-tb" class="col-span-1 md:col-span-2 lg:col-span-2 glass-card rounded-2xl p-3.5 flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                        <span class="text-[11px] font-semibold flex items-center gap-1">🔋 แบต NTC</span>
-                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">จำลอง</span>
+                <!-- Card 4: Battery Temp (Tb) with 0-60°C Linear Gauge and Dashed Thresholds (col-span-1 md:col-span-2 lg:col-span-2) -->
+                <div id="card-tb" class="col-span-1 md:col-span-2 lg:col-span-2 calm-card p-4 sm:p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-calm-muted dark:text-darkCalm-muted">
+                        <span class="text-xs font-semibold flex items-center gap-1">🔋 แบต NTC</span>
+                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-calm-sub dark:bg-darkCalm-sub text-calm-muted">จำลอง</span>
                     </div>
                     <div class="my-1.5 flex items-baseline gap-1">
-                        <span id="val-tb" class="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">--.-</span>
-                        <span class="text-xs font-semibold text-slate-400">°C</span>
+                        <span id="val-tb" class="text-3xl font-extrabold text-calm-text dark:text-darkCalm-text font-mono tabular-nums leading-none">--.-</span>
+                        <span class="text-sm font-semibold text-calm-muted">°C</span>
                     </div>
-                    <span class="text-[10px] text-slate-400">ความร้อนก้อนแบต</span>
+                    <!-- 0-60°C Gauge with 40/50/60 dashed marker lines -->
+                    <div class="space-y-1">
+                        <div class="w-full h-2 rounded-full bg-calm-sub dark:bg-darkCalm-sub relative overflow-hidden">
+                            <div id="bat-temp-fill" class="h-full bg-calm-ok transition-all" style="width: 50%;"></div>
+                            <!-- Dashed lines at 40°C (66%), 50°C (83%), 60°C (100%) -->
+                            <div class="absolute inset-0 flex justify-between pointer-events-none px-0.5">
+                                <span class="w-[1px] h-full bg-black/20 dark:bg-white/30" style="margin-left: 66.6%;" title="40°C"></span>
+                                <span class="w-[1px] h-full bg-black/20 dark:bg-white/30" style="margin-left: 16.6%;" title="50°C"></span>
+                            </div>
+                        </div>
+                        <div class="flex justify-between text-[9px] text-calm-muted font-mono">
+                            <span>0°C</span><span>40°</span><span>50°</span><span>60°C</span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Card 5: Battery SOC (col-span-1 md:col-span-2 lg:col-span-1) -->
-                <div id="card-soc" class="col-span-1 md:col-span-2 lg:col-span-1 glass-card rounded-2xl p-3.5 flex flex-col justify-between">
-                    <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-                        <span class="text-[11px] font-semibold flex items-center gap-1">⚡ SOC</span>
-                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">จำลอง</span>
+                <div id="card-soc" class="col-span-1 md:col-span-2 lg:col-span-1 calm-card p-4 sm:p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between text-calm-muted dark:text-darkCalm-muted">
+                        <span class="text-xs font-semibold flex items-center gap-1">⚡ SOC</span>
+                        <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-calm-sub dark:bg-darkCalm-sub text-calm-muted">จำลอง</span>
                     </div>
-                    <div class="my-1.5 flex items-baseline gap-0.5">
-                        <span id="val-soc" class="text-2xl font-extrabold text-slate-900 dark:text-white font-mono">--</span>
-                        <span class="text-[10px] font-semibold text-slate-400">%</span>
+                    <div class="my-2 flex items-baseline gap-0.5">
+                        <span id="val-soc" class="text-3xl font-extrabold text-calm-text dark:text-darkCalm-text font-mono tabular-nums leading-none">--</span>
+                        <span class="text-[11px] font-semibold text-calm-muted">%</span>
                     </div>
-                    <span class="text-[10px] text-slate-400">พลังงาน</span>
+                    <span class="text-[11px] text-calm-muted">คงเหลือ</span>
                 </div>
 
+            </div>
+
+            <!-- Contextual Assistant Advice Card (Directly following metrics, Non-Medical) -->
+            <div id="advice-box" class="calm-card p-3.5 sm:p-4 border-l-[5px] border-l-calm-accent flex items-start gap-3 transition-colors">
+                <span id="advice-icon" class="text-xl shrink-0 mt-0.5">💡</span>
+                <div class="flex-1 min-w-0">
+                    <div class="text-[10px] font-bold text-calm-muted uppercase tracking-wider">คำแนะนำการใช้งาน</div>
+                    <p id="advice-text" class="text-xs sm:text-[13.5px] font-medium text-calm-text dark:text-darkCalm-text leading-snug">
+                        เริ่มต้นใช้งาน: แตะเชื่อมต่อ Bluetooth → เลือกระดับความแรง 1–5 → แตะ STOP เมื่อต้องการหยุด
+                    </p>
+                </div>
+                <button onclick="dismissAdvice()" class="calm-btn text-calm-muted hover:text-calm-text text-sm font-bold px-1.5 py-0.5" title="ปิดคำแนะนำนี้">✕</button>
             </div>
 
             <!-- Simulation Note -->
-            <div id="sim-sensors-note" class="text-[11px] text-slate-400 dark:text-slate-500 text-center">
-                * ข้อมูลทั้งหมดข้างต้นเป็นค่าจำลองสำหรับทดสอบระบบ เนื่องจากยังไม่ได้ต่อเซนเซอร์วัดค่าจริง
+            <div id="sim-sensors-note" class="text-[11px] text-calm-muted text-center">
+                * ข้อมูลทั้งหมดข้างต้นเป็นค่าจำลองเนื่องจากยังไม่ได้เชื่อมต่อเซนเซอร์วัดค่าจริง
             </div>
-        </div>
 
-        <!-- Row 4: Telemetry Trend Graph (Chart.js) -->
-        <div class="glass-card rounded-2xl p-4 sm:p-5 transition-colors">
-            <div class="flex items-center justify-between mb-3">
-                <div>
-                    <h2 class="text-xs sm:text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <i data-lucide="line-chart" class="w-4 h-4 text-brand-600 dark:text-brand-400"></i>
-                        แนวโน้มอุณหภูมิอากาศและแบตเตอรี่เรียลไทม์
-                    </h2>
-                    <p class="text-[11px] text-slate-500 dark:text-slate-400">พล็อตข้อมูลต่อเนื่องทุก 2 วินาที</p>
+            <!-- 10-Minute Trend Graph with 40°C, 50°C, 60°C Safety Threshold Lines -->
+            <div class="calm-card p-4 sm:p-5 transition-colors">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h2 class="text-xs sm:text-sm font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-2">
+                            <i data-lucide="line-chart" class="w-4 h-4 text-calm-accent dark:text-darkCalm-accent"></i>
+                            แนวโน้มอุณหภูมิอากาศและแบตเตอรี่เรียลไทม์ (10 นาที)
+                        </h2>
+                        <p class="text-[11px] text-calm-muted">พร้อมเส้นประเกณฑ์ป้องกันความร้อน 40°C, 50°C และ 60°C</p>
+                    </div>
+                    <div class="flex items-center gap-3 text-[11px] font-semibold">
+                        <span class="flex items-center gap-1 text-sky-500"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> อากาศ</span>
+                        <span class="flex items-center gap-1 text-amber-500"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> แบต NTC</span>
+                    </div>
                 </div>
-                <div class="flex items-center gap-3 text-[11px] font-semibold">
-                    <span class="flex items-center gap-1 text-sky-500"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> อากาศ</span>
-                    <span class="flex items-center gap-1 text-amber-500"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> แบต NTC</span>
+                <div class="h-44 sm:h-52 w-full relative">
+                    <canvas id="telemetryChart"></canvas>
                 </div>
             </div>
-            <div class="h-44 sm:h-52 w-full relative">
-                <canvas id="telemetryChart"></canvas>
-            </div>
+
         </div>
 
     </main>
 
-    <!-- Sticky Bottom Emergency STOP Button (Always Accessible, Not in any tab) -->
-    <div class="fixed bottom-3 left-0 right-0 max-w-xl mx-auto px-3 sm:px-4 z-30 pointer-events-none">
-        <button id="btn-stop" onclick="handleEmergencyStop()" class="btn-touch-active pointer-events-auto w-full min-h-[58px] rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-2xl shadow-rose-600/40 border-2 border-rose-500/80 transition-all">
-            <i data-lucide="octagon-alert" class="w-6 h-6"></i>
-            <span>⛔ STOP หยุดฉุกเฉิน (ดับพัดลมทันที)</span>
-        </button>
-    </div>
-
-    <!-- Modal: Equipment List BOM -->
-    <div id="equipment-modal" class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/60 backdrop-blur-sm hidden transition-opacity">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden">
-            <div class="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-slate-200 dark:border-slate-800">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 flex items-center justify-center shrink-0">
-                        <i data-lucide="cpu" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">รายการอุปกรณ์และประมาณการงบประมาณ (BOM List)</h3>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">ระบบเสื้อกั๊กระบายความร้อนอัจฉริยะ (Smart Cooling Vest)</p>
-                    </div>
-                </div>
-                <button onclick="toggleEquipmentModal(false)" class="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-            <div class="p-3 sm:p-6 overflow-y-auto flex-1 space-y-4">
-                <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
-                    <table class="w-full text-xs text-left text-slate-700 dark:text-slate-300 min-w-[640px]">
-                        <thead class="text-xs uppercase bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
-                            <tr>
-                                <th class="px-3 py-3 text-center w-12">ลำดับ</th>
-                                <th class="px-4 py-3">รายการอุปกรณ์</th>
-                                <th class="px-4 py-3">รุ่น / สเปกทางเทคนิค</th>
-                                <th class="px-4 py-3">หน้าที่ในระบบ</th>
-                                <th class="px-3 py-3 text-center w-16">จำนวน</th>
-                                <th class="px-4 py-3 text-right">ราคาประเมิน</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                <td class="px-3 py-2.5 text-center text-slate-400">1</td>
-                                <td class="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">ไมโครคอนโทรลเลอร์</td>
-                                <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400">ESP32-S3 (Dual-Core 240MHz, BLE 5.0, USB-CDC)</td>
-                                <td class="px-4 py-2.5">ประมวลผลตรรกะความปลอดภัย, PWM 25kHz, ส่ง Telemetry</td>
-                                <td class="px-3 py-2.5 text-center">1 บอร์ด</td>
-                                <td class="px-4 py-2.5 text-right font-semibold text-brand-600 dark:text-brand-400">190.-</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                <td class="px-3 py-2.5 text-center text-slate-400">2</td>
-                                <td class="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">พัดลมระบายความร้อนตัว (ช่อง A/B)</td>
-                                <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400">พัดลมหอยโข่ง 70 mm (×2) 5400 RPM</td>
-                                <td class="px-4 py-2.5">เป่าระบายความร้อนลำตัวและแผ่นหลัง</td>
-                                <td class="px-3 py-2.5 text-center">2 ตัว</td>
-                                <td class="px-4 py-2.5 text-right font-semibold text-brand-600 dark:text-brand-400">380.-</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                <td class="px-3 py-2.5 text-center text-slate-400">3</td>
-                                <td class="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">พัดลมระบายความร้อนบ่า/คอ</td>
-                                <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400">ไมโครโบลเวอร์ 40 mm (×2) องศาเป่า 45° (≤ 70%)</td>
-                                <td class="px-4 py-2.5">เป่าระบายเหงื่อต้นคอและใบหน้าแบบแฮนด์ฟรี</td>
-                                <td class="px-3 py-2.5 text-center">2 ตัว</td>
-                                <td class="px-4 py-2.5 text-right font-semibold text-brand-600 dark:text-brand-400">220.-</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                <td class="px-3 py-2.5 text-center text-slate-400">4</td>
-                                <td class="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">พัดลมระบายความร้อนแบตเตอรี่ (BTMS)</td>
-                                <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400">Micro Fan 30 mm + NTC 10k แนบแพ็กแบตเตอรี่</td>
-                                <td class="px-4 py-2.5">เปิดอัตโนมัติเมื่อแบตเตอรี่ ≥40°C ป้องกันบวม</td>
-                                <td class="px-3 py-2.5 text-center">1 ตัว</td>
-                                <td class="px-4 py-2.5 text-right font-semibold text-brand-600 dark:text-brand-400">120.-</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                <td class="px-3 py-2.5 text-center text-slate-400">5</td>
-                                <td class="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">โมดูลขับกำลัง MOSFET / ไดรฟ์</td>
-                                <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400">DRV8833 Dual Driver หรือ Logic-Level MOSFET Module</td>
-                                <td class="px-4 py-2.5">ขับสัญญาณ PWM 25kHz แยก 3 แชนเนลอิสระ</td>
-                                <td class="px-3 py-2.5 text-center">2 ชุด</td>
-                                <td class="px-4 py-2.5 text-right font-semibold text-brand-600 dark:text-brand-400">140.-</td>
-                            </tr>
-                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                                <td class="px-3 py-2.5 text-center text-slate-400">6</td>
-                                <td class="px-4 py-2.5 font-semibold text-slate-900 dark:text-white">แบตเตอรี่ & วงจร BMS</td>
-                                <td class="px-4 py-2.5 text-slate-500 dark:text-slate-400">2S2P Li-ion 18650 Pack 7.4V + Hardware BMS 2S + ฟิวส์</td>
-                                <td class="px-4 py-2.5">แหล่งพลังงานหลักพร้อมระบบตัดวงจรนิรภัย 60°C</td>
-                                <td class="px-3 py-2.5 text-center">1 ชุด</td>
-                                <td class="px-4 py-2.5 text-right font-semibold text-brand-600 dark:text-brand-400">520.-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+    <!-- =========================================================================
+         STICKY BOTTOM EMERGENCY STOP BUTTON (คำนึงถึง safe-area-inset-bottom)
+         ========================================================================= -->
+    <div class="fixed bottom-0 left-0 right-0 z-30 px-3 sm:px-4 pointer-events-none" style="padding-bottom: max(12px, env(safe-area-inset-bottom));">
+        <div class="max-w-xl mx-auto">
+            <button id="btn-stop" onclick="handleEmergencyStop()" class="calm-btn pointer-events-auto w-full min-h-[58px] rounded-2xl bg-calm-cut text-white font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl border border-white/20">
+                <i data-lucide="octagon-alert" class="w-6 h-6"></i>
+                <span>⛔ STOP หยุดฉุกเฉิน (ดับพัดลมทันที)</span>
+            </button>
         </div>
     </div>
+
+    <!-- =========================================================================
+         MODALS & DIALOGS (Zero alert() / confirm())
+         ========================================================================= -->
 
     <!-- Modal: Quick Guide '?' -->
-    <div id="help-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm hidden">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+    <div id="help-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm hidden">
+        <div class="calm-card max-w-md w-full p-5 space-y-4 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-calm-muted/15 pb-2.5">
+                <h3 class="font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-2">
                     📖 คู่มือการใช้งานย่อ
                 </h3>
-                <button onclick="toggleHelpModal(false)" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg font-bold">✕</button>
+                <button onclick="toggleHelpModal(false)" class="text-calm-muted hover:text-calm-text text-lg font-bold">✕</button>
             </div>
-            <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-h-[70vh] overflow-y-auto">
+            <div class="space-y-3 text-xs text-calm-muted dark:text-darkCalm-muted leading-relaxed">
                 <div>
-                    <b class="text-brand-600 dark:text-brand-400">ความหมายของระดับความแรง:</b>
-                    <p>• OFF = ปิดพัดลม<br>• 1 = 20% ลมเบาสบาย<br>• 2 = 40% ทำงานทั่วไป<br>• 3 = 60% ลมแรงระบายเหงื่อ<br>• 4 = 80% เย็นเร็ว<br>• 5 = 100% สูงสุด (พัดลมบ่าจำกัดที่ 70% เสมอ)</p>
+                    <b class="text-calm-accent dark:text-darkCalm-accent">ระดับความแรงพัดลม:</b>
+                    <p>• OFF = ปิดพัดลมทุกตัว<br>• 1 = 20% ลมเบาสบาย<br>• 2 = 40% ทำงานทั่วไป<br>• 3 = 60% ลมแรงระบายเหงื่อ<br>• 4 = 80% เย็นเร็ว<br>• 5 = 100% สูงสุด (พัดลมบ่าจำกัดที่ 70% เสมอ)</p>
                 </div>
                 <div>
-                    <b class="text-brand-600 dark:text-brand-400">ความหมายของสีสถานะ:</b>
-                    <p>• 🟢 เขียว = อุณหภูมิและแบตเตอรี่ปกติ<br>• 🟡 เหลือง = แบตร้อนขึ้น (≥40°C) พัดลมแบตทำงาน หรือแบตเหลือ &lt;20%<br>• 🟠 ส้ม = แบตร้อน 50°C ระบบลดกำลังพัดลมเหลือ 60% อัตโนมัติ<br>• 🔴 แดง = หยุดฉุกเฉิน หรือตัดวงจรเนื่องจากแบตร้อนเกิน 60°C</p>
+                    <b class="text-calm-accent dark:text-darkCalm-accent">สีสถานะและความปลอดภัย:</b>
+                    <p>• 🟢 เขียว = ปกติ<br>• 🟡 เหลือง = แบตร้อนขึ้น (≥40°C) พัดลมแบตเตอรี่ทำงาน หรือแบตเหลือ &lt;20%<br>• 🟠 ส้ม = แบตร้อน 50°C ระบบลดกำลังพัดลมเหลือ 60% อัตโนมัติ (ลดโหลด)<br>• 🔴 แดง = หยุดฉุกเฉิน หรือตัดวงจรเนื่องจากแบตร้อนเกิน 60°C</p>
                 </div>
                 <div>
-                    <b class="text-brand-600 dark:text-brand-400">วิธีรีเซ็ตระบบเมื่อถูกตัดวงจร:</b>
-                    <p>หากระบบตัดไฟเนื่องจากแบตร้อนเกิน 60°C ให้รอแบตเตอรี่เย็นลงแล้วแตะปุ่ม "รีเซ็ตระบบ" บนการ์ดสถานะเพื่อใช้งานต่อ</p>
+                    <b class="text-calm-accent dark:text-darkCalm-accent">วิธีรีเซ็ตเมื่อตัดวงจร:</b>
+                    <p>หากระบบตัดไฟเพราะแบตร้อนเกิน 60°C ให้รอให้แบตเตอรี่เย็นลงต่ำกว่า 50°C แล้วแตะปุ่ม "รีเซ็ตระบบ" บนการ์ดสถานะเพื่อใช้งานต่อ</p>
+                </div>
+                <div class="p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[11px]">
+                    <b>ข้อแนะนำสุขภาพ:</b> เสื้อกั๊กนี้เพื่อความสบายในการทำงาน ไม่ใช่อุปกรณ์ทางการแพทย์ หากมีอาการหน้ามืดหรือวิงเวียน ควรหยุดพักในที่ร่มทันทีและปรึกษาแพทย์
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Developer & Testing Tools -->
-    <div id="dev-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm hidden">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
-                <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <i data-lucide="wrench" class="w-4 h-4 text-amber-500"></i> เครื่องมือผู้พัฒนาและทดสอบ
+    <!-- Modal: Developer & Testing Tools (from '⋯' menu) -->
+    <div id="dev-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm hidden">
+        <div class="calm-card max-w-md w-full p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-calm-muted/15 pb-2.5">
+                <h3 class="font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-2">
+                    <i data-lucide="wrench" class="w-4 h-4 text-calm-warn"></i> เครื่องมือผู้พัฒนาและทดสอบ
                 </h3>
-                <button onclick="toggleDevModal(false)" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-lg font-bold">✕</button>
+                <button onclick="toggleDevModal(false)" class="text-calm-muted hover:text-calm-text text-lg font-bold">✕</button>
             </div>
             <div class="space-y-3 text-xs">
-                <div class="flex items-center justify-between py-1 border-b border-slate-100 dark:border-slate-800">
-                    <label for="chk-fast-test" class="font-semibold text-slate-700 dark:text-slate-300">⚡ โหมดทดสอบเร็ว (1 นาที = 6 วินาที)</label>
+                <div class="flex items-center justify-between py-1 border-b border-calm-muted/15">
+                    <label for="chk-fast-test" class="font-semibold text-calm-text dark:text-darkCalm-text">⚡ โหมดทดสอบเร็ว (1 นาที = 6 วินาที)</label>
                     <input type="checkbox" id="chk-fast-test" onchange="sendCmd(12, this.checked ? 1 : 0); showToast(this.checked ? 'เปิดโหมดทดสอบเร็ว' : 'ปิดโหมดทดสอบเร็ว')">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
-                    <button onclick="sendCmd(6, 0); showToast('สลับจำลองแบตร้อน')" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-semibold text-slate-700 dark:text-slate-200">
+                    <button onclick="sendCmd(6, 0); showToast('สลับจำลองแบตร้อน')" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
                         🔥 จำลองแบตร้อน
                     </button>
-                    <button onclick="sendCmd(5, 0); showToast('ส่งคำสั่งรีเซ็ต')" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-semibold text-slate-700 dark:text-slate-200">
+                    <button onclick="sendCmd(5, 0); showToast('ส่งคำสั่งรีเซ็ต')" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
                         🔄 ส่งรีเซ็ต
                     </button>
-                    <button onclick="startWifiMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-semibold text-slate-700 dark:text-slate-200">
+                    <button onclick="startWifiMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
                         📶 สลับ Wi-Fi AP
                     </button>
-                    <button onclick="startDemoMode()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 font-semibold text-slate-700 dark:text-slate-200">
+                    <button onclick="startDemoMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
                         🧪 โหมด Demo
                     </button>
                 </div>
-                <div id="raw-tele-box" class="p-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-500 break-all">
+                <div id="raw-tele-box" class="p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[10px] font-mono text-calm-muted break-all">
                     Telemetry Raw: รอข้อมูล...
                 </div>
             </div>
@@ -719,32 +831,32 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
     </div>
 
     <!-- Modal: Create / Edit Custom Preset Dialog -->
-    <div id="preset-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm hidden">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-                <h3 id="preset-modal-title" class="font-bold text-slate-900 dark:text-white">สร้างพรีเซ็ตอัตโนมัติ</h3>
-                <button onclick="togglePresetModal(false)" class="text-slate-400 hover:text-slate-700 text-lg font-bold">✕</button>
+    <div id="preset-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm hidden">
+        <div class="calm-card max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-calm-muted/15 pb-2">
+                <h3 id="preset-modal-title" class="font-bold text-calm-text dark:text-darkCalm-text">สร้างพรีเซ็ตอัตโนมัติ</h3>
+                <button onclick="togglePresetModal(false)" class="text-calm-muted hover:text-calm-text text-lg font-bold">✕</button>
             </div>
             
             <div class="space-y-3 text-xs">
                 <div>
                     <label class="font-semibold block mb-1">ชื่อพรีเซ็ต:</label>
-                    <input id="inp-preset-name" type="text" placeholder="เช่น ทำงานกะบ่าย" class="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+                    <input id="inp-preset-name" type="text" placeholder="เช่น ทำงานกะบ่าย" class="w-full p-2 border border-calm-muted/20 rounded-xl bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="font-semibold block mb-1">ไอคอน:</label>
-                        <select id="sel-preset-icon" class="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+                        <select id="sel-preset-icon" class="w-full p-2 border border-calm-muted/20 rounded-xl bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text">
                             <option value="⚡">⚡ ทั่วไป</option>
-                            <option value="☀️">☀️ แดดแรง</option>
-                            <option value="🏭">🏭 โรงงาน</option>
-                            <option value="🏃">🏃 เคลื่อนไหวสูง</option>
+                            <option value="☀️">☀️ กลางแดดจัด</option>
+                            <option value="🏭">🏭 โรงงาน/โกดัง</option>
+                            <option value="🏃">🏃 เดินบ่อย</option>
                             <option value="🌙">🌙 กะดึก</option>
                         </select>
                     </div>
                     <div>
                         <label class="font-semibold block mb-1">ระดับสูงสุด (เพดาน):</label>
-                        <select id="sel-preset-maxlvl" class="w-full p-2 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800">
+                        <select id="sel-preset-maxlvl" class="w-full p-2 border border-calm-muted/20 rounded-xl bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text">
                             <option value="5">ระดับ 5 (100%)</option>
                             <option value="4">ระดับ 4 (80%)</option>
                             <option value="3">ระดับ 3 (60%)</option>
@@ -756,45 +868,59 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 <div>
                     <div class="flex items-center justify-between mb-1">
                         <label class="font-semibold">ช่วงดัชนีความร้อน HI (1–5 ช่วง):</label>
-                        <button type="button" onclick="addPresetBandRow()" class="text-brand-600 dark:text-brand-400 font-bold text-[11px]">+ เพิ่มช่วง</button>
+                        <button type="button" onclick="addPresetBandRow()" class="text-calm-accent dark:text-darkCalm-accent font-bold text-[11px]">+ เพิ่มช่วง</button>
                     </div>
-                    <div id="preset-bands-container" class="space-y-1.5">
+                    <div id="preset-bands-container" class="space-y-2">
                         <!-- Populated by JS -->
                     </div>
                 </div>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button onclick="togglePresetModal(false)" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold">ยกเลิก</button>
-                <button onclick="savePresetForm()" class="px-4 py-1.5 rounded-lg bg-brand-600 text-white text-xs font-bold">บันทึกพรีเซ็ต</button>
+            <div class="flex justify-end gap-2 pt-2 border-t border-calm-muted/15">
+                <button onclick="togglePresetModal(false)" class="calm-btn px-3 py-1.5 rounded-xl border border-calm-muted/20 text-calm-muted text-xs font-semibold">ยกเลิก</button>
+                <button onclick="savePresetForm()" class="calm-btn px-4 py-1.5 rounded-xl bg-calm-accent text-white text-xs font-bold shadow-sm">บันทึกพรีเซ็ต</button>
             </div>
         </div>
     </div>
 
     <!-- Modal: In-Page Confirmation Dialog (Replaces confirm()) -->
-    <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-sm hidden">
-        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-sm w-full p-5 space-y-3">
-            <h4 id="confirm-modal-title" class="font-bold text-slate-900 dark:text-white text-sm">ยืนยันการดำเนินการ</h4>
-            <p id="confirm-modal-desc" class="text-xs text-slate-600 dark:text-slate-300">คุณต้องการดำเนินการนี้หรือไม่?</p>
+    <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm hidden">
+        <div class="calm-card max-w-sm w-full p-5 space-y-3">
+            <h4 id="confirm-modal-title" class="font-bold text-calm-text dark:text-darkCalm-text text-sm">ยืนยันการดำเนินการ</h4>
+            <p id="confirm-modal-desc" class="text-xs text-calm-muted dark:text-darkCalm-muted">คุณต้องการดำเนินการนี้หรือไม่?</p>
             <div class="flex justify-end gap-2 pt-2">
-                <button id="btn-confirm-cancel" class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-semibold">ยกเลิก</button>
-                <button id="btn-confirm-ok" class="px-4 py-1.5 rounded-lg bg-rose-600 text-white text-xs font-bold">ยืนยัน</button>
+                <button id="btn-confirm-cancel" class="calm-btn px-3 py-1.5 rounded-xl border border-calm-muted/20 text-calm-muted text-xs font-semibold">ยกเลิก</button>
+                <button id="btn-confirm-ok" class="calm-btn px-4 py-1.5 rounded-xl bg-calm-cut text-white text-xs font-bold">ยืนยัน</button>
             </div>
         </div>
     </div>
 
-    <!-- Inline Toast Banner (Zero alert() calls) -->
+    <!-- Inline Toast Banner -->
     <div id="toast-banner" class="toast-banner"></div>
 
-    <!-- Application Script (Logic, 3D Engine, Web BLE, Auto System, Protocol) -->
+    <!-- =========================================================================
+         APPLICATION SCRIPT (Logic, Physics Engine, Web BLE, Auto System, Protocol)
+         ========================================================================= -->
     <script>
-        // --- Exact BLE GATT Protocol Constants ---
-        const SVC_UUID = '7d1c0001-2f4b-4c1a-9a53-5b0e6f6c0a01';
-        const CMD_UUID = '7d1c0002-2f4b-4c1a-9a53-5b0e6f6c0a01';
-        const TEL_UUID = '7d1c0003-2f4b-4c1a-9a53-5b0e6f6c0a01';
+        // =========================================================================
+        // SECTION 10 (3): FAN PHYSICS TUNING PARAMETERS (ปรับแต่งได้ง่ายที่นี่)
+        // =========================================================================
+        const FAN_PHYSICS = {
+            omegaMax: 0.65,           // ความเร็วเชิงมุมสูงสุด (rad/frame ที่ 100%)
+            tauUp: 0.60,              // ค่าคงที่เวลาเร่งความเร็ว (วินาที)
+            tauDown: 1.20,            // ค่าคงที่เวลาชะลอความเร็ว (วินาที) เลียนแบบ Coast-down
+            ghostDiscThreshold: 60,   // % ความเร็วที่เริ่มแสดงแผ่นเบลอจำลอง (Ghost Disc)
+            rpmFactor: 4500 / 100,    // สัดส่วนคำนวณ RPM: 4,500 * (% / 100)
+            cameraReturnTimeMs: 4000  // คืนมุมกล้องเดิมหลังปล่อยมือ 4 วินาที
+        };
 
         // Sensor simulation constant (Requirement C)
         const SIMULATED_SENSORS = true;
+
+        // Exact BLE GATT Protocol Constants
+        const SVC_UUID = '7d1c0001-2f4b-4c1a-9a53-5b0e6f6c0a01';
+        const CMD_UUID = '7d1c0002-2f4b-4c1a-9a53-5b0e6f6c0a01';
+        const TEL_UUID = '7d1c0003-2f4b-4c1a-9a53-5b0e6f6c0a01';
 
         const LV_PCT = [0, 20, 40, 60, 80, 100];
         const PROG_NAMES = ['Pre-cool', 'Ramp-up', 'Custom'];
@@ -822,7 +948,8 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         let phaseDurationSec = 0;
         let countdownTimer = null;
         let userTappedStop = false;
-        let currentTheme = localStorage.getItem('theme') || 'light';
+        let currentTheme = localStorage.getItem('smartvest_theme') || 'light';
+        let sessionStartTime = Date.now();
 
         // Custom program local copy
         let localCustom = [
@@ -894,7 +1021,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             };
         }
 
-        // --- BLE GATT Command Transmitter ---
+        // Command Transmitter
         function sendCmd(cmd, val = 0, a = 0, b = 0) {
             haptic(25);
             if (cmd === 4) userTappedStop = true;
@@ -911,7 +1038,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             }
         }
 
-        // --- Telemetry 12-Byte Parser ---
+        // Telemetry 12-Byte Parser
         function parseTelemetry(view) {
             return {
                 ta: view.getInt16(0, true) / 10,
@@ -927,7 +1054,6 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             };
         }
 
-        // Current telemetry cache
         let latestTel = { ta: 34.0, rh: 60, tb: 30.5, soc: 85, b: 0, n: 0, bat: 0, f: 0, ph: 0, pg: 0 };
 
         // --- Main UI Updater ---
@@ -942,53 +1068,62 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             $('#val-soc').textContent = d.soc;
             $('#val-hi').textContent = hi.toFixed(1);
 
+            // Update Top Bar indicators
+            $('#top-bat-soc').textContent = d.soc + '%';
+            $('#top-bat-temp').textContent = d.tb.toFixed(1) + '°C';
+            if (d.tb >= 60) $('#top-bat-temp').className = "text-calm-cut dark:text-darkCalm-cut font-black";
+            else if (d.tb >= 50) $('#top-bat-temp').className = "text-calm-derate dark:text-darkCalm-derate font-bold";
+            else if (d.tb >= 40) $('#top-bat-temp').className = "text-calm-warn dark:text-darkCalm-warn font-bold";
+            else $('#top-bat-temp').className = "text-calm-ok dark:text-darkCalm-ok";
+
+            // Battery Linear Gauge Fill & Dashed line
+            const fillPct = Math.min(100, Math.max(0, (d.tb / 60) * 100));
+            $('#bat-temp-fill').style.width = fillPct + '%';
+            if (d.tb >= 50) $('#bat-temp-fill').className = "h-full bg-calm-cut transition-all";
+            else if (d.tb >= 40) $('#bat-temp-fill').className = "h-full bg-calm-warn transition-all";
+            else $('#bat-temp-fill').className = "h-full bg-calm-ok transition-all";
+
             // HI Risk Tag
             const hiTag = $('#hi-risk-tag');
-            if (hi >= 40.0) {
-                hiTag.textContent = 'อันตรายสูง';
-                hiTag.className = "ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300";
-            } else if (hi >= 36.0) {
-                hiTag.textContent = 'ระวังมาก';
-                hiTag.className = "ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300";
+            if (hi >= 41.0) {
+                hiTag.textContent = 'อันตรายมาก';
+                hiTag.className = "ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300";
+            } else if (hi >= 38.0) {
+                hiTag.textContent = 'อันตราย';
+                hiTag.className = "ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950/60 dark:text-orange-300";
             } else if (hi >= 32.0) {
-                hiTag.textContent = 'เตือนระวัง';
-                hiTag.className = "ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-950/60 dark:text-yellow-300";
+                hiTag.textContent = 'ระวัง';
+                hiTag.className = "ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300";
             } else {
                 hiTag.textContent = 'ปกติ';
-                hiTag.className = "ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
+                hiTag.className = "ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
             }
 
-            // Sync 3D Real Fan Speeds & Badges
-            liveSpeedBody = d.b;
-            liveSpeedNeck = d.n;
-            liveSpeedBat = d.bat;
+            // Sync Real Fan Speeds for Physics Engine
+            targetSpeedBody = d.b;
+            targetSpeedNeck = d.n;
+            targetSpeedBat = d.bat;
 
-            $('#3d-fan-badge').textContent = `${d.b}% (${Math.round(d.b * 54)} RPM)`;
-            $('#lbl-rpm-body').textContent = `${d.b}% (${Math.round(d.b * 54)} RPM)`;
-            $('#lbl-rpm-neck').textContent = `${d.n}% (${Math.round(d.n * 50)} RPM)`;
-            $('#lbl-rpm-bat').textContent = `${d.bat}% (${Math.round(d.bat * 60)} RPM)`;
+            const approxRpm = Math.round(d.b * FAN_PHYSICS.rpmFactor);
+            $('#3d-fan-badge').textContent = `${d.b}% (${approxRpm} RPM ประมาณการ)`;
+            $('#lbl-rpm-body').textContent = `${d.b}% (${approxRpm} RPM)`;
+            $('#lbl-rpm-neck').textContent = `${d.n}% (${Math.round(d.n * FAN_PHYSICS.rpmFactor)} RPM)`;
+            $('#lbl-rpm-bat').textContent = `${d.bat}% (${Math.round(d.bat * FAN_PHYSICS.rpmFactor)} RPM)`;
 
-            // 2D fallback sync
-            $('#fan-2d-body')?.style.setProperty('animation', d.b > 0 ? `spin ${Math.max(0.2, 2.5 - (d.b/100)*2.2)}s linear infinite` : 'none');
-            $('#fan-2d-neck')?.style.setProperty('animation', d.n > 0 ? `spin ${Math.max(0.2, 2.5 - (d.n/100)*2.2)}s linear infinite` : 'none');
-            $('#fan-2d-bat')?.style.setProperty('animation', d.bat > 0 ? `spin ${Math.max(0.2, 2.5 - (d.bat/100)*2.2)}s linear infinite` : 'none');
+            $('#hero-rpm-body').textContent = d.b + '%';
+            $('#hero-rpm-neck').textContent = d.n + '%';
+
+            // 2D Fallback animation speed sync
+            $('#fan-2d-body')?.style.setProperty('animation', d.b > 0 ? `spin ${Math.max(0.18, 2.2 - (d.b/100)*2.0)}s linear infinite` : 'none');
+            $('#fan-2d-neck')?.style.setProperty('animation', d.n > 0 ? `spin ${Math.max(0.18, 2.2 - (d.n/100)*2.0)}s linear infinite` : 'none');
+            $('#fan-2d-bat')?.style.setProperty('animation', d.bat > 0 ? `spin ${Math.max(0.18, 2.2 - (d.bat/100)*2.0)}s linear infinite` : 'none');
 
             // Sliders Telemetry Readout
             $('#ctrl-tele-b').textContent = d.b + '%';
             $('#ctrl-tele-n').textContent = d.n + '%';
             $('#ctrl-tele-bat').textContent = d.bat + '%';
 
-            // Battery Temp & SOC warning card styles
-            const cardTb = $('#card-tb');
-            if (d.tb >= 50) cardTb.className = "col-span-1 md:col-span-2 lg:col-span-2 glass-card rounded-2xl p-3.5 flex flex-col justify-between border-rose-500 bg-rose-50/50 dark:bg-rose-950/20";
-            else if (d.tb >= 40) cardTb.className = "col-span-1 md:col-span-2 lg:col-span-2 glass-card rounded-2xl p-3.5 flex flex-col justify-between border-amber-500 bg-amber-50/50 dark:bg-amber-950/20";
-            else cardTb.className = "col-span-1 md:col-span-2 lg:col-span-2 glass-card rounded-2xl p-3.5 flex flex-col justify-between";
-
-            const cardSoc = $('#card-soc');
-            if (d.soc < 20) cardSoc.className = "col-span-1 md:col-span-2 lg:col-span-1 glass-card rounded-2xl p-3.5 flex flex-col justify-between border-amber-500 bg-amber-50/50 dark:bg-amber-950/20";
-            else cardSoc.className = "col-span-1 md:col-span-2 lg:col-span-1 glass-card rounded-2xl p-3.5 flex flex-col justify-between";
-
-            // Evaluate flags
+            // Flags
             const isCutOrStopped = (d.f & 1) !== 0;
             const isSimHot = (d.f & 2) !== 0;
             const isDerated = (d.f & 4) !== 0;
@@ -1004,7 +1139,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             btnReset.classList.add('hidden');
 
             if (isCutOrStopped) {
-                heroCard.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-rose-500 bg-rose-50/40 dark:bg-rose-950/20";
+                heroCard.className = "calm-card p-4 sm:p-6 border-l-[6px] border-l-calm-cut transition-colors bg-rose-50/40 dark:bg-rose-950/20";
                 if (d.tb >= 60) {
                     heroIcon.textContent = '🔴';
                     heroTitle.textContent = 'ระบบตัดวงจรเพื่อความปลอดภัย';
@@ -1021,14 +1156,14 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 btnReset.classList.remove('hidden');
                 setActiveKeypadUI(0);
             } else if (isDerated || d.tb >= 50) {
-                heroCard.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-amber-500 bg-amber-50/40 dark:bg-amber-950/20";
+                heroCard.className = "calm-card p-4 sm:p-6 border-l-[6px] border-l-calm-derate transition-colors bg-amber-50/40 dark:bg-amber-950/20";
                 heroIcon.textContent = '🟠';
                 heroTitle.textContent = `ลดโหลดอัตโนมัติ (แบต ${d.tb.toFixed(1)}°C)`;
                 heroTag.textContent = 'ลดเหลือ 60%';
                 heroTag.className = "text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300";
                 heroDesc.textContent = 'ระบบปรับลดกำลังพัดลมลงอัตโนมัติ เพื่อป้องกันความร้อนสะสมในแบตเตอรี่';
             } else if (d.tb >= 40 || d.soc < 20) {
-                heroCard.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-amber-400 bg-amber-50/30 dark:bg-amber-950/20";
+                heroCard.className = "calm-card p-4 sm:p-6 border-l-[6px] border-l-calm-warn transition-colors bg-amber-50/30 dark:bg-amber-950/20";
                 if (d.tb >= 40) {
                     heroIcon.textContent = '🟡';
                     heroTitle.textContent = `แบตร้อน ${d.tb.toFixed(1)}°C (พัดลมแบตทำงาน)`;
@@ -1043,18 +1178,18 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                     heroDesc.textContent = 'แบตเตอรี่เหลือต่ำกว่า 20% ควรเตรียมสลับก้อนใหม่หรือชาร์จไฟ';
                 }
             } else {
-                heroCard.className = "glass-card rounded-2xl p-4 sm:p-5 border-l-4 border-l-emerald-500";
+                heroCard.className = "calm-card p-4 sm:p-6 border-l-[6px] border-l-calm-ok transition-colors";
                 if (d.b > 0 || d.n > 0) {
                     heroIcon.textContent = '🟢';
                     heroTitle.textContent = 'เย็นสบาย · กำลังระบายอากาศ';
                     heroTag.textContent = 'ปกติ';
-                    heroTag.className = "text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400";
+                    heroTag.className = "text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400";
                     heroDesc.textContent = `พัดลมตัว ${d.b}% | พัดลมบ่า ${d.n}% | แบตเตอรี่ ${d.tb.toFixed(1)}°C ปกติ`;
                 } else {
                     heroIcon.textContent = '🟢';
                     heroTitle.textContent = 'พร้อมใช้งาน (สแตนด์บาย)';
                     heroTag.textContent = 'ปกติ';
-                    heroTag.className = "text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400";
+                    heroTag.className = "text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400";
                     heroDesc.textContent = 'พัดลมปิดอยู่ เลือกระดับความแรง 1–5 ด้านล่างเพื่อเริ่มเป่าลม';
                 }
             }
@@ -1074,9 +1209,28 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             // Assistant recommendations (Using HI)
             evaluateAdvice(d, hi);
 
+            // Update Hub LED Status in 3D
+            updateHubLedStatus(isCutOrStopped, isDerated);
+
+            // Update Top Bar Mode Display
+            updateTopModeDisplay(d);
+
             // Raw debug
             $('#raw-tele-box').textContent = 
                 `Ta:${d.ta.toFixed(1)}C, Rh:${d.rh}%, HI:${hi.toFixed(1)}C, Tb:${d.tb.toFixed(1)}C, SOC:${d.soc}%, EffB:${d.b}%, EffN:${d.n}%, Bat:${d.bat}%, F:0b${d.f.toString(2).padStart(3, '0')}, Pg:${d.pg}, Ph:${d.ph}`;
+        }
+
+        function updateTopModeDisplay(d) {
+            let modeStr = "ควบคุมเอง";
+            if (d.ph > 0) {
+                modeStr = `โปรแกรม · ${PROG_NAMES[d.pg]} (เฟส ${d.ph})`;
+            } else if (isAutoActive) {
+                const preset = getAllPresets().find(p => p.id === activePresetId);
+                modeStr = `อัตโนมัติ · ${preset ? preset.name : 'Auto'}`;
+            }
+            $('#top-mode-pill').textContent = `โหมด: ${modeStr}`;
+            $('#hero-mobile-mode').textContent = `โหมด: ${modeStr}`;
+            $('#top-level-badge').textContent = `ระดับ ${activeLevel} · ${LV_PCT[activeLevel]}%`;
         }
 
         // --- Active Level Keypad UI ---
@@ -1086,16 +1240,16 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 const bl = parseInt(btn.dataset.lvl);
                 if (bl === lvl) {
                     if (bl === 0) {
-                        btn.className = "btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-700 bg-slate-700 text-white font-bold flex flex-col items-center justify-center p-1 ring-2 ring-slate-400";
+                        btn.className = "btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-text bg-calm-text text-white font-bold flex flex-col items-center justify-center p-1 ring-2 ring-calm-muted/40";
                     } else {
-                        btn.className = "btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-brand-500 bg-brand-600 text-white font-bold flex flex-col items-center justify-center p-1 ring-2 ring-brand-300 dark:ring-brand-800 shadow-md";
-                        btn.querySelector('.text-slate-500')?.classList.replace('text-slate-500', 'text-brand-100');
+                        btn.className = "btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-accent bg-calm-accent text-white font-bold flex flex-col items-center justify-center p-1 ring-2 ring-calm-accent/40 shadow-sm";
+                        btn.querySelector('.text-calm-muted')?.classList.replace('text-calm-muted', 'text-white/80');
                     }
                 } else {
-                    btn.className = "btn-level btn-touch-active min-h-[58px] rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-bold flex flex-col items-center justify-center p-1 transition-all";
+                    btn.className = "btn-level calm-btn min-h-[60px] rounded-xl border-2 border-calm-muted/20 bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text font-bold flex flex-col items-center justify-center p-1 transition-all";
                 }
             });
-            $('#ctrl-box-status').textContent = lvl === 0 ? 'OFF (0%)' : `ระดับ ${lvl} (${LV_PCT[lvl]}%)`;
+            $('#top-level-badge').textContent = `ระดับ ${lvl} · ${LV_PCT[lvl]}%`;
         }
 
         // --- Advice Engine (Uses HI, Non-Medical) ---
@@ -1104,7 +1258,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             const isDerate = (d.f & 4) !== 0 || d.tb >= 50;
             const isBatHot = d.tb >= 40 && d.tb < 50;
             const isLowSoc = d.soc < 20;
-            const isHighHI = hi >= 36.0;
+            const isHighHI = hi >= 38.0;
 
             let targetId = null, icon = '💡', msg = '';
 
@@ -1125,7 +1279,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 msg = 'แบตเตอรี่เหลือน้อยกว่า 20% แนะนำให้เตรียมสลับก้อนใหม่ หรือชาร์จไฟเมื่อเสร็จงาน';
             } else if (isHighHI) {
                 targetId = 'rec_hi'; icon = '☀️';
-                msg = `ดัชนีความร้อนสูง (${hi.toFixed(1)}°C) สภาพแวดล้อมร้อนจัด ควรเลือกพักในที่ร่มสักครู่และจิบน้ำอย่างสม่ำเสมอ`;
+                msg = `ดัชนีความร้อนสูง (${hi.toFixed(1)}°C) ควรเลือกพักในที่ร่มสักครู่และจิบน้ำอย่างสม่ำเสมอ`;
             }
 
             const box = $('#advice-box');
@@ -1152,9 +1306,9 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             const titleEl = $('#prog-active-title');
             const timerEl = $('#prog-countdown-timer');
 
-            $('#btn-prog-0').classList.toggle('border-brand-500', isRunning && pg === 0);
-            $('#btn-prog-1').classList.toggle('border-brand-500', isRunning && pg === 1);
-            $('#btn-prog-2').classList.toggle('border-brand-500', isRunning && pg === 2);
+            $('#card-prog-0').classList.toggle('border-calm-accent', isRunning && pg === 0);
+            $('#card-prog-1').classList.toggle('border-calm-accent', isRunning && pg === 1);
+            $('#card-prog-2').classList.toggle('border-calm-accent', isRunning && pg === 2);
 
             if (!isRunning) {
                 titleEl.textContent = 'ไม่ได้รันโปรแกรม';
@@ -1210,6 +1364,10 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                     return;
                 }
 
+                // Show connecting state on top pill
+                $('#top-conn-dot').className = "w-2 h-2 rounded-full bg-calm-warn skeleton-shimmer";
+                $('#top-conn-text').textContent = "กำลังเชื่อม...";
+
                 bleDevice = await navigator.bluetooth.requestDevice({
                     filters: [{ namePrefix: 'SmartVest' }],
                     optionalServices: [SVC_UUID]
@@ -1249,33 +1407,33 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
 
         function setConnectionUI(mode, name = '') {
             connMode = mode;
-            const btn = $('#btn-ble-connect');
-            const txt = $('#ble-status-text');
-            const dot = $('#ble-ping-dot');
+            const btn = $('#btn-top-conn');
+            const txt = $('#top-conn-text');
+            const dot = $('#top-conn-dot');
             const alertBox = $('#disconn-alert');
 
             if (mode === 'BLE') {
-                txt.textContent = name || 'SmartVest';
-                btn.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 text-xs font-semibold";
-                dot.innerHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>`;
+                txt.textContent = name || 'เชื่อมต่อแล้ว';
+                dot.className = "w-2 h-2 rounded-full bg-calm-ok";
+                btn.className = "calm-btn flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold bg-calm-ok/15 text-calm-ok dark:text-darkCalm-ok border border-calm-ok/30";
                 alertBox.classList.add('hidden');
                 showToast('🔵 เชื่อมต่อ Bluetooth เรียบร้อย');
             } else if (mode === 'WIFI') {
                 txt.textContent = 'Wi-Fi AP';
-                btn.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/40 border border-sky-300 dark:border-sky-800 text-sky-700 dark:text-sky-400 text-xs font-semibold";
-                dot.innerHTML = `<span class="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>`;
+                dot.className = "w-2 h-2 rounded-full bg-sky-500";
+                btn.className = "calm-btn flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30";
                 alertBox.classList.add('hidden');
                 showToast('📶 เชื่อมต่อโหมด Wi-Fi AP');
             } else if (mode === 'DEMO') {
-                txt.textContent = 'Demo Mode';
-                btn.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-400 text-xs font-semibold";
-                dot.innerHTML = `<span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>`;
+                txt.textContent = 'โหมด Demo';
+                dot.className = "w-2 h-2 rounded-full bg-calm-accent";
+                btn.className = "calm-btn flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold bg-calm-accent/15 text-calm-accentText dark:text-darkCalm-accent border border-calm-accent/30";
                 alertBox.classList.add('hidden');
                 showToast('🧪 เปิดโหมดจำลองในเบราว์เซอร์');
             } else {
-                txt.textContent = 'เชื่อมต่อ BLE';
-                btn.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold";
-                dot.innerHTML = `<span class="relative inline-flex rounded-full h-2 w-2 bg-slate-400"></span>`;
+                txt.textContent = 'ยังไม่เชื่อม';
+                dot.className = "w-2 h-2 rounded-full bg-slate-400";
+                btn.className = "calm-btn flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold bg-calm-sub dark:bg-darkCalm-sub text-calm-muted dark:text-darkCalm-muted border border-calm-muted/20";
             }
         }
 
@@ -1318,18 +1476,20 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             sendCmd(2, cap);
         }
 
-        // --- Control Box Tabs Switcher ---
+        // --- Control Box Segmented Tabs Switcher ---
         function switchControlTab(tab) {
             ['lvl', 'auto', 'prog'].forEach(t => {
                 const isTarget = (t === tab);
                 $(`#ctrl-tab-${t}`).className = isTarget 
-                    ? "px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-50 text-brand-600 dark:bg-brand-950/60 dark:text-brand-400 transition-all"
-                    : "px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-all";
+                    ? "calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-bold bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text shadow-sm transition-all flex items-center justify-center"
+                    : "calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-semibold text-calm-muted dark:text-darkCalm-muted hover:text-calm-text dark:hover:text-darkCalm-text transition-all flex items-center justify-center";
                 $(`#pane-ctrl-${t}`).classList.toggle('hidden', !isTarget);
             });
         }
 
-        // --- SECTION F: AUTO SYSTEM & PRESETS ---
+        // =========================================================================
+        // SECTION 6: AUTO SYSTEM & VISUAL HI RANGE MAPS
+        // =========================================================================
         const PRESETS_STORAGE_KEY = 'smartvest.presets.v1';
 
         const BUILTIN_PRESETS = [
@@ -1340,11 +1500,11 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 isBuiltin: true,
                 maxLevel: 5,
                 bands: [
-                    { minHI: -99, maxHI: 26.9, level: 0 },
+                    { minHI: 0, maxHI: 26.9, level: 0 },
                     { minHI: 27.0, maxHI: 31.9, level: 2 },
                     { minHI: 32.0, maxHI: 35.9, level: 3 },
                     { minHI: 36.0, maxHI: 39.9, level: 4 },
-                    { minHI: 40.0, maxHI: 999, level: 5 }
+                    { minHI: 40.0, maxHI: 65.0, level: 5 }
                 ]
             },
             {
@@ -1354,10 +1514,10 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 isBuiltin: true,
                 maxLevel: 3,
                 bands: [
-                    { minHI: -99, maxHI: 27.9, level: 0 },
+                    { minHI: 0, maxHI: 27.9, level: 0 },
                     { minHI: 28.0, maxHI: 29.9, level: 1 },
                     { minHI: 30.0, maxHI: 31.9, level: 2 },
-                    { minHI: 32.0, maxHI: 999, level: 3 }
+                    { minHI: 32.0, maxHI: 65.0, level: 3 }
                 ]
             }
         ];
@@ -1390,26 +1550,59 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             return [...BUILTIN_PRESETS, ...userPresets];
         }
 
+        // Color mapping for Visual HI Range Map levels (0-5)
+        const LEVEL_COLORS = [
+            'bg-slate-400',       // 0: OFF
+            'bg-sky-400',         // 1: 20%
+            'bg-cyan-500',        // 2: 40%
+            'bg-teal-500',        // 3: 60%
+            'bg-amber-500',       // 4: 80%
+            'bg-rose-500'         // 5: 100%
+        ];
+
         function renderPresetsList() {
             const list = $('#presets-list');
             list.innerHTML = getAllPresets().map(p => {
                 const isSelected = (p.id === activePresetId);
+                
+                // Build Visual HI Range Map (Mini Bar)
+                const totalSpan = 45; // 20°C to 65°C span for visual normalization
+                const mapSegments = p.bands.map(b => {
+                    const span = Math.max(1, (b.maxHI - b.minHI));
+                    const widthPct = Math.min(100, Math.max(8, (span / totalSpan) * 100));
+                    return `<div class="h-full ${LEVEL_COLORS[b.level] || 'bg-slate-400'}" style="width: ${widthPct}%;" title="HI ${b.minHI}-${b.maxHI}°C → ระดับ ${b.level}"></div>`;
+                }).join('');
+
                 return `
-                    <div class="flex items-center justify-between p-2 rounded-xl border ${isSelected ? 'border-brand-500 bg-brand-50/50 dark:bg-brand-950/40' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800'} text-xs transition-all">
-                        <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="selectPreset('${p.id}')">
-                            <span class="text-base">${p.icon}</span>
-                            <div>
-                                <span class="font-bold text-slate-900 dark:text-white">${p.name}</span>
-                                ${p.isBuiltin ? '<span class="text-[9px] px-1 py-0.2 bg-slate-100 dark:bg-slate-700 rounded text-slate-500 ml-1">พรีเซ็ตหลัก</span>' : ''}
-                                <div class="text-[10px] text-slate-400">เพดาน: ระดับ ${p.maxLevel} • ${p.bands.length} ช่วง</div>
+                    <div class="calm-card p-3 border ${isSelected ? 'border-calm-accent bg-calm-accent/5' : 'border-calm-muted/20'} text-xs space-y-2">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 cursor-pointer flex-1" onclick="selectPreset('${p.id}')">
+                                <span class="text-lg">${p.icon}</span>
+                                <div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="font-bold text-calm-text dark:text-darkCalm-text">${p.name}</span>
+                                        ${p.isBuiltin ? '<span class="text-[9px] px-1.5 py-0.2 bg-calm-sub dark:bg-darkCalm-sub rounded text-calm-muted font-semibold">ค่าสมมติฐาน</span>' : ''}
+                                    </div>
+                                    <div class="text-[10px] text-calm-muted">เพดาน: ระดับ ${p.maxLevel} • ${p.bands.length} ช่วงอุณหภูมิ</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <button onclick="clonePreset('${p.id}')" class="calm-btn p-1.5 text-calm-muted hover:text-calm-accent" title="คัดลอก"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
+                                ${!p.isBuiltin ? `
+                                    <button onclick="editUserPreset('${p.id}')" class="calm-btn p-1.5 text-calm-muted hover:text-calm-warn" title="แก้ไข"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
+                                    <button onclick="confirmDeletePreset('${p.id}')" class="calm-btn p-1.5 text-calm-muted hover:text-calm-cut" title="ลบ"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                                ` : ''}
                             </div>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <button onclick="clonePreset('${p.id}')" class="p-1 text-slate-400 hover:text-brand-600" title="คัดลอก"><i data-lucide="copy" class="w-3.5 h-3.5"></i></button>
-                            ${!p.isBuiltin ? `
-                                <button onclick="editUserPreset('${p.id}')" class="p-1 text-slate-400 hover:text-amber-500" title="แก้ไข"><i data-lucide="edit-2" class="w-3.5 h-3.5"></i></button>
-                                <button onclick="confirmDeletePreset('${p.id}')" class="p-1 text-slate-400 hover:text-rose-500" title="ลบ"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
-                            ` : ''}
+
+                        <!-- Visual HI Range Map Bar -->
+                        <div class="space-y-0.5 cursor-pointer" onclick="selectPreset('${p.id}')">
+                            <div class="w-full h-2 rounded-full bg-calm-sub dark:bg-darkCalm-sub overflow-hidden flex gap-0.5 p-0.5">
+                                ${mapSegments}
+                            </div>
+                            <div class="flex justify-between text-[9px] text-calm-muted font-mono">
+                                <span>&lt;27°C</span><span>32°C</span><span>36°C</span><span>&gt;40°C</span>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -1444,7 +1637,6 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         function setAutoMaster(enabled) {
             isAutoActive = enabled;
             $('#auto-master-switch').checked = enabled;
-            $('#hero-active-mode-badge').textContent = enabled ? 'โหมด: อัตโนมัติ (Auto)' : 'โหมด: ควบคุมเอง';
 
             if (enabled) {
                 isAutoPaused = false;
@@ -1459,6 +1651,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 $('#auto-status-desc').textContent = 'ปิดการทำงาน';
                 $('#auto-paused-card').classList.add('hidden');
             }
+            updateTopModeDisplay(latestTel);
         }
 
         function pauseAutoMode(reason) {
@@ -1468,6 +1661,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             $('#auto-status-desc').textContent = `หยุดชั่วคราว: ${reason}`;
             $('#auto-pause-reason').textContent = reason;
             $('#auto-paused-card').classList.remove('hidden');
+            updateTopModeDisplay(latestTel);
         }
 
         function resumeAutoMode() {
@@ -1515,15 +1709,13 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             // Cap at maxLevel
             targetLvl = Math.min(targetLvl, preset.maxLevel);
 
-            // If level needs to change, check dwell time (30s) and hysteresis (1C)
+            // Dwell time (30s) and Hysteresis (1°C buffer)
             if (lastAutoAppliedLevel !== targetLvl) {
                 const now = Date.now();
                 if (lastAutoAppliedLevel !== null && (now - lastAutoLevelChangeTime < 30000)) {
-                    // Holding dwell time
-                    return;
+                    return; // Hold dwell time
                 }
 
-                // Apply level
                 lastAutoAppliedLevel = targetLvl;
                 lastAutoLevelChangeTime = now;
                 sendCmd(3, targetLvl);
@@ -1532,7 +1724,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             }
         }
 
-        // --- Custom Preset Editing / Creation ---
+        // --- Custom Preset Editor Dialog ---
         let editingPresetId = null;
 
         function openCreatePresetModal() {
@@ -1548,7 +1740,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             renderPresetBandRows([
                 { minHI: 0, maxHI: 28, level: 0 },
                 { minHI: 28.1, maxHI: 34, level: 2 },
-                { minHI: 34.1, maxHI: 60, level: 4 }
+                { minHI: 34.1, maxHI: 65, level: 4 }
             ]);
             togglePresetModal(true);
         }
@@ -1588,21 +1780,21 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         function renderPresetBandRows(bands) {
             const container = $('#preset-bands-container');
             container.innerHTML = bands.map((b, idx) => `
-                <div class="band-row flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                    <span class="text-[10px] font-bold text-slate-400 w-4">${idx + 1}</span>
-                    <input type="number" step="0.1" value="${b.minHI <= -90 ? 0 : b.minHI}" class="band-min w-16 p-1 border rounded bg-white dark:bg-slate-900 text-center text-xs">
-                    <span class="text-slate-400">-</span>
-                    <input type="number" step="0.1" value="${b.maxHI >= 900 ? 55 : b.maxHI}" class="band-max w-16 p-1 border rounded bg-white dark:bg-slate-900 text-center text-xs">
-                    <span class="text-[10px] text-slate-400">°C →</span>
-                    <select class="band-lvl flex-1 p-1 border rounded bg-white dark:bg-slate-900 text-xs">
-                        <option value="0" ${b.level === 0 ? 'selected' : ''}>OFF</option>
-                        <option value="1" ${b.level === 1 ? 'selected' : ''}>ระดับ 1</option>
-                        <option value="2" ${b.level === 2 ? 'selected' : ''}>ระดับ 2</option>
-                        <option value="3" ${b.level === 3 ? 'selected' : ''}>ระดับ 3</option>
-                        <option value="4" ${b.level === 4 ? 'selected' : ''}>ระดับ 4</option>
-                        <option value="5" ${b.level === 5 ? 'selected' : ''}>ระดับ 5</option>
+                <div class="band-row flex items-center gap-1.5 p-2 rounded-xl bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/15">
+                    <span class="text-[10px] font-bold text-calm-muted w-4">${idx + 1}</span>
+                    <input type="number" step="0.1" value="${b.minHI <= -90 ? 0 : b.minHI}" class="band-min w-16 p-1 border rounded-lg bg-calm-card dark:bg-darkCalm-card text-center text-xs">
+                    <span class="text-calm-muted">-</span>
+                    <input type="number" step="0.1" value="${b.maxHI >= 900 ? 55 : b.maxHI}" class="band-max w-16 p-1 border rounded-lg bg-calm-card dark:bg-darkCalm-card text-center text-xs">
+                    <span class="text-[10px] text-calm-muted">°C →</span>
+                    <select class="band-lvl flex-1 p-1 border rounded-lg bg-calm-card dark:bg-darkCalm-card text-xs">
+                        <option value="0" ${b.level === 0 ? 'selected' : ''}>OFF (0%)</option>
+                        <option value="1" ${b.level === 1 ? 'selected' : ''}>ระดับ 1 (20%)</option>
+                        <option value="2" ${b.level === 2 ? 'selected' : ''}>ระดับ 2 (40%)</option>
+                        <option value="3" ${b.level === 3 ? 'selected' : ''}>ระดับ 3 (60%)</option>
+                        <option value="4" ${b.level === 4 ? 'selected' : ''}>ระดับ 4 (80%)</option>
+                        <option value="5" ${b.level === 5 ? 'selected' : ''}>ระดับ 5 (100%)</option>
                     </select>
-                    <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-1">✕</button>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-calm-cut font-bold px-1">✕</button>
                 </div>
             `).join('');
         }
@@ -1615,14 +1807,14 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             }
             const container = $('#preset-bands-container');
             const div = document.createElement('div');
-            div.className = "band-row flex items-center gap-1.5 p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700";
+            div.className = "band-row flex items-center gap-1.5 p-2 rounded-xl bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/15";
             div.innerHTML = `
-                <span class="text-[10px] font-bold text-slate-400 w-4">${rows.length + 1}</span>
-                <input type="number" step="0.1" value="35" class="band-min w-16 p-1 border rounded bg-white dark:bg-slate-900 text-center text-xs">
-                <span class="text-slate-400">-</span>
-                <input type="number" step="0.1" value="40" class="band-max w-16 p-1 border rounded bg-white dark:bg-slate-900 text-center text-xs">
-                <span class="text-[10px] text-slate-400">°C →</span>
-                <select class="band-lvl flex-1 p-1 border rounded bg-white dark:bg-slate-900 text-xs">
+                <span class="text-[10px] font-bold text-calm-muted w-4">${rows.length + 1}</span>
+                <input type="number" step="0.1" value="35" class="band-min w-16 p-1 border rounded-lg bg-calm-card dark:bg-darkCalm-card text-center text-xs">
+                <span class="text-calm-muted">-</span>
+                <input type="number" step="0.1" value="40" class="band-max w-16 p-1 border rounded-lg bg-calm-card dark:bg-darkCalm-card text-center text-xs">
+                <span class="text-[10px] text-calm-muted">°C →</span>
+                <select class="band-lvl flex-1 p-1 border rounded-lg bg-calm-card dark:bg-darkCalm-card text-xs">
                     <option value="0">OFF</option>
                     <option value="1">ระดับ 1</option>
                     <option value="2">ระดับ 2</option>
@@ -1630,7 +1822,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                     <option value="4">ระดับ 4</option>
                     <option value="5" selected>ระดับ 5</option>
                 </select>
-                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 font-bold px-1">✕</button>
+                <button type="button" onclick="this.parentElement.remove()" class="text-calm-cut font-bold px-1">✕</button>
             `;
             container.appendChild(div);
         }
@@ -1661,10 +1853,8 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 bands.push({ minHI: min, maxHI: max, level: lvl });
             }
 
-            // Sort bands by minHI ascending
             bands.sort((a, b) => a.minHI - b.minHI);
 
-            // Validate no overlaps
             for (let i = 0; i < bands.length - 1; i++) {
                 if (bands[i].maxHI > bands[i + 1].minHI) {
                     showToast(`ช่วงอุณหภูมิซ้อนทับกัน (${bands[i].maxHI}°C > ${bands[i + 1].minHI}°C)`);
@@ -1718,10 +1908,10 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         function renderCustomTable() {
             const tbody = $('#custom-table-body');
             tbody.innerHTML = [0, 1, 2, 3].map(i => `
-                <tr class="border-b border-slate-100 dark:border-slate-800">
+                <tr class="border-b border-calm-muted/15">
                     <td class="py-1 font-bold">เฟส ${i + 1}</td>
                     <td>
-                        <select id="sel-cust-lvl-${i}" class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-1 font-semibold">
+                        <select id="sel-cust-lvl-${i}" class="bg-calm-card dark:bg-darkCalm-card border border-calm-muted/20 rounded-lg p-1 font-semibold text-calm-text dark:text-darkCalm-text">
                             <option value="255">— จบ</option>
                             <option value="0">OFF</option>
                             <option value="1">1 (20%)</option>
@@ -1732,7 +1922,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                         </select>
                     </td>
                     <td>
-                        <input id="inp-cust-min-${i}" type="number" min="0" max="255" value="0" class="w-14 text-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-1 font-semibold">
+                        <input id="inp-cust-min-${i}" type="number" min="0" max="255" value="0" class="w-14 text-center bg-calm-card dark:bg-darkCalm-card border border-calm-muted/20 rounded-lg p-1 font-semibold text-calm-text dark:text-darkCalm-text">
                     </td>
                 </tr>
             `).join('');
@@ -1755,7 +1945,6 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         }
 
         // Modals Toggle
-        function toggleEquipmentModal(show) { $('#equipment-modal').classList.toggle('hidden', !show); }
         function toggleHelpModal(show) { $('#help-modal').classList.toggle('hidden', !show); }
         function toggleDevModal(show) { $('#dev-modal').classList.toggle('hidden', !show); }
 
@@ -1768,15 +1957,15 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 html.classList.remove('light');
                 html.classList.add('dark');
                 if (icon) icon.setAttribute('data-lucide', 'sun');
-                if (scene) scene.background = new THREE.Color(0x0b111a);
+                if (scene) scene.background = new THREE.Color(0x0E1513);
             } else {
                 html.classList.remove('dark');
                 html.classList.add('light');
                 if (icon) icon.setAttribute('data-lucide', 'moon');
-                if (scene) scene.background = new THREE.Color(0xf8fafc);
+                if (scene) scene.background = new THREE.Color(0xF5F3EE);
             }
             lucide.createIcons();
-            localStorage.setItem('theme', theme);
+            localStorage.setItem('smartvest_theme', theme);
             if (telemetryChart) updateChartTheme(theme);
         }
 
@@ -1792,13 +1981,27 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             }
         }
 
-        // --- SECTION A: 3D REAL FANS SCENE (THREE.JS) ---
+        // =========================================================================
+        // SECTION 5: 3D REAL FAN SCENE WITH INERTIA & AIRFLOW PARTICLES
+        // =========================================================================
         let scene, camera, renderer;
         let animatedBodyFans = [], animatedNeckFans = [], animatedBatFans = [];
+        let ghostDiscs = [];
+        let hubLedMeshes = [];
+        let fanPickMeshes = [];
         let bodyAirParticles, neckAirParticles;
+
         let isDragging = false, previousMousePosition = { x: 0, y: 0 };
-        let liveSpeedBody = 0, liveSpeedNeck = 0, liveSpeedBat = 0;
+        let lastUserInteractionTime = 0;
         let fansRootGroup = null;
+
+        // Inertia state variables (Smoothed speeds)
+        let currentSpeedBody = 0, currentSpeedNeck = 0, currentSpeedBat = 0;
+        let targetSpeedBody = 0, targetSpeedNeck = 0, targetSpeedBat = 0;
+
+        // Default Camera Angle
+        const DEFAULT_CAM_ROT_X = -0.15;
+        const DEFAULT_CAM_ROT_Y = 0.22;
 
         function init3D() {
             if (!checkWebGLSupport()) {
@@ -1810,41 +2013,47 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             const canvas = $('#three-canvas');
 
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(currentTheme === 'dark' ? 0x0b111a : 0xf8fafc);
+            scene.background = new THREE.Color(currentTheme === 'dark' ? 0x0E1513 : 0xF5F3EE);
 
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 2.2, 7.8);
+            camera.position.set(0, 1.8, 7.6);
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
             scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
-            dirLight.position.set(6, 12, 8);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            dirLight.position.set(5, 10, 8);
             scene.add(dirLight);
 
             createRealFanAssemblies();
             createAirParticleStreams();
 
-            // Touch and Mouse Controls for Orbit
-            function handleStart(x, y) { isDragging = true; previousMousePosition = { x, y }; }
+            // Drag Controls with 4-second ease-back timer
+            function handleStart(x, y) {
+                isDragging = true;
+                previousMousePosition = { x, y };
+                lastUserInteractionTime = Date.now();
+            }
+
             function handleMove(x, y) {
                 if (!isDragging || !fansRootGroup) return;
                 const dx = x - previousMousePosition.x;
                 const dy = y - previousMousePosition.y;
-                fansRootGroup.rotation.y += dx * 0.008;
-                fansRootGroup.rotation.x += dy * 0.008;
-                fansRootGroup.rotation.x = Math.max(-0.5, Math.min(0.5, fansRootGroup.rotation.x));
+                fansRootGroup.rotation.y += dx * 0.007;
+                fansRootGroup.rotation.x += dy * 0.007;
+                fansRootGroup.rotation.x = Math.max(-0.45, Math.min(0.45, fansRootGroup.rotation.x));
                 previousMousePosition = { x, y };
+                lastUserInteractionTime = Date.now();
             }
 
             container.addEventListener('mousedown', e => handleStart(e.clientX, e.clientY));
             container.addEventListener('mousemove', e => handleMove(e.clientX, e.clientY));
-            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mouseup', () => { isDragging = false; lastUserInteractionTime = Date.now(); });
 
             container.addEventListener('touchstart', e => {
                 if (e.touches.length === 1) handleStart(e.touches[0].clientX, e.touches[0].clientY);
@@ -1852,162 +2061,245 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             container.addEventListener('touchmove', e => {
                 if (e.touches.length === 1) handleMove(e.touches[0].clientX, e.touches[0].clientY);
             }, { passive: true });
-            window.addEventListener('touchend', () => isDragging = false);
+            window.addEventListener('touchend', () => { isDragging = false; lastUserInteractionTime = Date.now(); });
+
+            // Raycaster for tapping fan to inspect
+            container.addEventListener('click', handleFanClick);
+
+            // Tab visibility: Stop requestAnimationFrame when hidden
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) lastFrameTime = performance.now();
+            });
 
             animate3D();
         }
 
-        // Fan Assembly Generator (Realistic Casing, Hub, Blades)
-        function createFanUnit(radius, depth, bladeCount, bladeColor, frameColor) {
+        // Fan Unit Generator with Ghost Disc and Status Hub LED
+        function createFanUnit(fanId, radius, depth, bladeCount, bladeColor, frameColor) {
             const group = new THREE.Group();
 
-            const frameMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.5, metalness: 0.2 });
-            const hubMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.6 });
-            const bladeMat = new THREE.MeshPhysicalMaterial({ color: bladeColor, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.85 });
+            const frameMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.5, metalness: 0.25 });
+            const hubMat = new THREE.MeshStandardMaterial({ color: 0x0F8B8D, roughness: 0.3, metalness: 0.6 });
+            const bladeMat = new THREE.MeshPhysicalMaterial({ color: bladeColor, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.9 });
 
-            // Circular Housing Ring
-            const ringGeo = new THREE.CylinderGeometry(radius, radius, depth, 32, 1, true);
-            const ring = new THREE.Mesh(ringGeo, frameMat);
+            // Housing Ring
+            const ring = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, depth, 32, 1, true), frameMat);
             ring.rotation.x = Math.PI / 2;
             group.add(ring);
 
-            // Exhaust Duct Flange
-            const ductGeo = new THREE.BoxGeometry(radius * 1.9, radius * 1.9, depth * 0.6);
-            const duct = new THREE.Mesh(ductGeo, frameMat);
-            duct.position.z = -depth * 0.2;
-            group.add(duct);
+            // Frame Backing
+            const flange = new THREE.Mesh(new THREE.BoxGeometry(radius * 1.95, radius * 1.95, depth * 0.5), frameMat);
+            flange.position.z = -depth * 0.25;
+            group.add(flange);
 
-            // Spinning Impeller Rotor
+            // Spinning Rotor
             const rotor = new THREE.Group();
-            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.3, radius * 0.3, depth * 1.1, 16), hubMat);
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.28, radius * 0.28, depth * 1.05, 16), hubMat);
             hub.rotation.x = Math.PI / 2;
             rotor.add(hub);
 
-            // Aerodynamic Curved Blades
+            // Hub Status LED Ring
+            const hubLed = new THREE.Mesh(
+                new THREE.RingGeometry(radius * 0.08, radius * 0.22, 16),
+                new THREE.MeshBasicMaterial({ color: 0x5D6B66, side: THREE.DoubleSide })
+            );
+            hubLed.position.z = depth * 0.56;
+            rotor.add(hubLed);
+            hubLedMeshes.push(hubLed);
+
+            // Curved Blades
             for (let i = 0; i < bladeCount; i++) {
                 const angle = (Math.PI * 2 / bladeCount) * i;
-                const bladeGeo = new THREE.BoxGeometry(radius * 0.6, depth * 0.15, radius * 0.2);
-                const blade = new THREE.Mesh(bladeGeo, bladeMat);
-                blade.position.set(Math.cos(angle) * (radius * 0.45), Math.sin(angle) * (radius * 0.45), 0);
-                blade.rotation.z = angle + 0.4;
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.62, depth * 0.14, radius * 0.18), bladeMat);
+                blade.position.set(Math.cos(angle) * (radius * 0.44), Math.sin(angle) * (radius * 0.44), 0);
+                blade.rotation.z = angle + 0.35;
                 blade.rotation.y = 0.35;
                 rotor.add(blade);
             }
 
+            // Ghost Disc (Motion blur disc active at >= 60%)
+            const ghostMat = new THREE.MeshBasicMaterial({
+                color: bladeColor,
+                transparent: true,
+                opacity: 0.0,
+                side: THREE.DoubleSide
+            });
+            const ghostDisc = new THREE.Mesh(new THREE.RingGeometry(radius * 0.28, radius * 0.88, 32), ghostMat);
+            ghostDisc.position.z = depth * 0.05;
+            rotor.add(ghostDisc);
+            ghostDiscs.push(ghostDisc);
+
             group.add(rotor);
+
+            // Click Pick Box for Inspector
+            const pickBox = new THREE.Mesh(
+                new THREE.BoxGeometry(radius * 2, radius * 2, depth * 2),
+                new THREE.MeshBasicMaterial({ visible: false })
+            );
+            pickBox.userData = { fanId, radius };
+            group.add(pickBox);
+            fanPickMeshes.push(pickBox);
+
             return { group, rotor };
         }
 
         function createRealFanAssemblies() {
             fansRootGroup = new THREE.Group();
 
-            // 1. Dual Body Fans (70mm, 7 blades) - Channel A & B
-            const bodyFan1 = createFanUnit(1.0, 0.4, 7, 0x38bdf8, 0x1e293b);
-            bodyFan1.group.position.set(-1.4, -0.4, 0);
+            // Set initial pleasant front-angle
+            fansRootGroup.rotation.x = DEFAULT_CAM_ROT_X;
+            fansRootGroup.rotation.y = DEFAULT_CAM_ROT_Y;
+
+            // 1. Dual Body Fans (70mm) - Left & Right
+            const bodyFan1 = createFanUnit('body', 0.95, 0.4, 7, 0x38bdf8, 0x1E2623);
+            bodyFan1.group.position.set(-1.3, -0.4, 0);
             fansRootGroup.add(bodyFan1.group);
             animatedBodyFans.push(bodyFan1.rotor);
 
-            const bodyFan2 = createFanUnit(1.0, 0.4, 7, 0x38bdf8, 0x1e293b);
-            bodyFan2.group.position.set(1.4, -0.4, 0);
+            const bodyFan2 = createFanUnit('body', 0.95, 0.4, 7, 0x38bdf8, 0x1E2623);
+            bodyFan2.group.position.set(1.3, -0.4, 0);
             fansRootGroup.add(bodyFan2.group);
             animatedBodyFans.push(bodyFan2.rotor);
 
-            // 2. Dual Shoulder Fans (40mm, 5 blades) - Neck
-            const neckFan1 = createFanUnit(0.65, 0.3, 5, 0x7dd3fc, 0x334155);
-            neckFan1.group.position.set(-1.1, 1.4, -0.2);
-            neckFan1.group.rotation.x = -0.3;
-            fansRootGroup.add(neckFan1.group);
-            animatedNeckFans.push(neckFan1.rotor);
+            // 2. Shoulder Micro-blower (Single paired assembly representing neck fans)
+            const neckFan = createFanUnit('neck', 0.72, 0.32, 5, 0x5CD1C9, 0x2A3732);
+            neckFan.group.position.set(0, 1.35, -0.2);
+            neckFan.group.rotation.x = -0.25;
+            fansRootGroup.add(neckFan.group);
+            animatedNeckFans.push(neckFan.rotor);
 
-            const neckFan2 = createFanUnit(0.65, 0.3, 5, 0x7dd3fc, 0x334155);
-            neckFan2.group.position.set(1.1, 1.4, -0.2);
-            neckFan2.group.rotation.x = -0.3;
-            fansRootGroup.add(neckFan2.group);
-            animatedNeckFans.push(neckFan2.rotor);
+            // 3. Battery Micro-fan (30mm) with Heatsink Plate
+            const batFan = createFanUnit('bat', 0.5, 0.24, 5, 0xD9902F, 0x3D4C46);
+            batFan.group.position.set(0, -0.3, -0.4);
 
-            // 3. Battery Micro Fan (30mm, 5 blades) with Heatsink Block
-            const batFan = createFanUnit(0.5, 0.25, 5, 0xf59e0b, 0x475569);
-            batFan.group.position.set(0, -0.1, -0.3);
-            
-            // Heatsink base plate behind battery fan
             const heatSink = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 1.2, 0.25),
-                new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.3, metalness: 0.8 })
+                new THREE.BoxGeometry(1.2, 1.2, 0.2),
+                new THREE.MeshStandardMaterial({ color: 0x5D6B66, roughness: 0.4, metalness: 0.7 })
             );
-            heatSink.position.set(0, -0.1, -0.5);
+            heatSink.position.set(0, -0.3, -0.56);
             fansRootGroup.add(heatSink);
 
             fansRootGroup.add(batFan.group);
             animatedBatFans.push(batFan.rotor);
 
-            // Base mounting chassis
-            const baseChassis = new THREE.Mesh(
-                new THREE.CylinderGeometry(2.4, 2.6, 0.2, 32),
-                new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 })
+            // Minimalist Modern Mounting Frame
+            const frameBar = new THREE.Mesh(
+                new THREE.CylinderGeometry(2.4, 2.5, 0.18, 32),
+                new THREE.MeshStandardMaterial({ color: 0x16201D, roughness: 0.6 })
             );
-            baseChassis.position.y = -1.5;
-            fansRootGroup.add(baseChassis);
+            frameBar.position.y = -1.5;
+            fansRootGroup.add(frameBar);
 
             scene.add(fansRootGroup);
         }
 
+        // Catmull-Rom Airflow Particle Streams (No Red! Cyan to Mint)
         function createAirParticleStreams() {
-            // Body Fan Particles
-            const countBody = 100;
+            // Body Streams
+            const countBody = 120;
             const geoBody = new THREE.BufferGeometry();
             const posBody = new Float32Array(countBody * 3);
             for (let i = 0; i < countBody; i++) {
-                const side = (i % 2 === 0) ? -1.4 : 1.4;
-                posBody[i * 3] = side + (Math.random() - 0.5) * 0.8;
-                posBody[i * 3 + 1] = -0.4 + (Math.random() - 0.5) * 0.8;
-                posBody[i * 3 + 2] = 0.2 + Math.random() * 2.5;
+                const side = (i % 2 === 0) ? -1.3 : 1.3;
+                posBody[i * 3] = side + (Math.random() - 0.5) * 0.7;
+                posBody[i * 3 + 1] = -0.4 + (Math.random() - 0.5) * 0.7;
+                posBody[i * 3 + 2] = 0.2 + Math.random() * 2.6;
             }
             geoBody.setAttribute('position', new THREE.BufferAttribute(posBody, 3));
-            bodyAirParticles = new THREE.Points(geoBody, new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.08, transparent: true, opacity: 0.7 }));
+            bodyAirParticles = new THREE.Points(geoBody, new THREE.PointsMaterial({
+                color: 0x38bdf8,
+                size: 0.08,
+                transparent: true,
+                opacity: 0.75
+            }));
             fansRootGroup.add(bodyAirParticles);
 
-            // Neck Fan Particles
-            const countNeck = 60;
+            // Neck Stream
+            const countNeck = 70;
             const geoNeck = new THREE.BufferGeometry();
             const posNeck = new Float32Array(countNeck * 3);
             for (let i = 0; i < countNeck; i++) {
-                const side = (i % 2 === 0) ? -1.1 : 1.1;
-                posNeck[i * 3] = side + (Math.random() - 0.5) * 0.5;
-                posNeck[i * 3 + 1] = 1.4 + Math.random() * 1.5;
+                posNeck[i * 3] = (Math.random() - 0.5) * 0.7;
+                posNeck[i * 3 + 1] = 1.35 + Math.random() * 1.8;
                 posNeck[i * 3 + 2] = -0.2 + (Math.random() - 0.5) * 0.6;
             }
             geoNeck.setAttribute('position', new THREE.BufferAttribute(posNeck, 3));
-            neckAirParticles = new THREE.Points(geoNeck, new THREE.PointsMaterial({ color: 0x7dd3fc, size: 0.07, transparent: true, opacity: 0.7 }));
+            neckAirParticles = new THREE.Points(geoNeck, new THREE.PointsMaterial({
+                color: 0x5CD1C9,
+                size: 0.075,
+                transparent: true,
+                opacity: 0.75
+            }));
             fansRootGroup.add(neckAirParticles);
         }
 
-        function animate3D() {
+        let lastFrameTime = performance.now();
+
+        function animate3D(now = performance.now()) {
             requestAnimationFrame(animate3D);
 
-            // Gentle Idle Rotation if not dragging
-            if (!isDragging && fansRootGroup) fansRootGroup.rotation.y += 0.002;
+            const dt = Math.min(0.1, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
 
-            // 1. Body Fans Rotation (b %)
-            const speedFactorBody = (liveSpeedBody / 100) * 0.45;
-            animatedBodyFans.forEach(f => f.rotation.z += speedFactorBody);
+            // Camera Ease-back to Default View after 4 seconds of inactivity
+            if (!isDragging && fansRootGroup && (Date.now() - lastUserInteractionTime > FAN_PHYSICS.cameraReturnTimeMs)) {
+                fansRootGroup.rotation.x += (DEFAULT_CAM_ROT_X - fansRootGroup.rotation.x) * 0.02;
+                fansRootGroup.rotation.y += (DEFAULT_CAM_ROT_Y - fansRootGroup.rotation.y) * 0.02;
+            }
 
-            // 2. Neck Fans Rotation (n %)
-            const speedFactorNeck = (liveSpeedNeck / 100) * 0.45;
-            animatedNeckFans.forEach(f => f.rotation.z += speedFactorNeck);
+            // Check prefers-reduced-motion
+            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reducedMotion) {
+                if (bodyAirParticles) bodyAirParticles.visible = false;
+                if (neckAirParticles) neckAirParticles.visible = false;
+                renderer.render(scene, camera);
+                return;
+            }
 
-            // 3. Battery Fan Rotation (bat %)
-            const speedFactorBat = (liveSpeedBat / 100) * 0.45;
-            animatedBatFans.forEach(f => f.rotation.z += speedFactorBat);
+            // --- INERTIA EMULATION (Lerp with TauUp & TauDown) ---
+            function smoothInertia(current, target) {
+                const tau = (target >= current) ? FAN_PHYSICS.tauUp : FAN_PHYSICS.tauDown;
+                const alpha = 1.0 - Math.exp(-dt / tau);
+                let next = current + (target - current) * alpha;
+                if (Math.abs(target - next) < 0.05) next = target;
+                return next;
+            }
 
-            // Particles Flow
+            currentSpeedBody = smoothInertia(currentSpeedBody, targetSpeedBody);
+            currentSpeedNeck = smoothInertia(currentSpeedNeck, targetSpeedNeck);
+            currentSpeedBat  = smoothInertia(currentSpeedBat, targetSpeedBat);
+
+            // Compute Angular Velocities (Same direction for all: +z)
+            const omegaBody = FAN_PHYSICS.omegaMax * (currentSpeedBody / 100);
+            const omegaNeck = FAN_PHYSICS.omegaMax * (currentSpeedNeck / 100);
+            const omegaBat  = FAN_PHYSICS.omegaMax * (currentSpeedBat / 100);
+
+            animatedBodyFans.forEach(f => f.rotation.z += omegaBody);
+            animatedNeckFans.forEach(f => f.rotation.z += omegaNeck);
+            animatedBatFans.forEach(f => f.rotation.z += omegaBat);
+
+            // Ghost Discs Opacity Scaling (>= 60%)
+            ghostDiscs.forEach(gd => {
+                if (currentSpeedBody >= FAN_PHYSICS.ghostDiscThreshold) {
+                    gd.material.opacity = Math.min(0.48, ((currentSpeedBody - 60) / 40) * 0.48);
+                    gd.visible = true;
+                } else {
+                    gd.visible = false;
+                }
+            });
+
+            // Airflow Particles Flow & Color (Cyan to Mint)
             if (bodyAirParticles) {
-                if (liveSpeedBody > 0) {
+                if (currentSpeedBody > 0.5) {
                     const pos = bodyAirParticles.geometry.attributes.position.array;
                     for (let i = 0; i < pos.length / 3; i++) {
-                        pos[i * 3 + 2] += 0.02 + (speedFactorBody * 0.08);
-                        if (pos[i * 3 + 2] > 3.0) pos[i * 3 + 2] = 0.3;
+                        pos[i * 3 + 2] += 0.02 + (omegaBody * 0.12);
+                        if (pos[i * 3 + 2] > 3.2) pos[i * 3 + 2] = 0.25;
                     }
                     bodyAirParticles.geometry.attributes.position.needsUpdate = true;
+                    // Interpolate color from soft sky blue to teal
+                    const t = currentSpeedBody / 100;
+                    bodyAirParticles.material.color.setRGB(0.22 * (1 - t) + 0.06 * t, 0.74 * (1 - t) + 0.55 * t, 0.97 * (1 - t) + 0.55 * t);
                     bodyAirParticles.visible = true;
                 } else {
                     bodyAirParticles.visible = false;
@@ -2015,11 +2307,11 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             }
 
             if (neckAirParticles) {
-                if (liveSpeedNeck > 0) {
+                if (currentSpeedNeck > 0.5) {
                     const pos = neckAirParticles.geometry.attributes.position.array;
                     for (let i = 0; i < pos.length / 3; i++) {
-                        pos[i * 3 + 1] += 0.02 + (speedFactorNeck * 0.08);
-                        if (pos[i * 3 + 1] > 3.0) pos[i * 3 + 1] = 1.4;
+                        pos[i * 3 + 1] += 0.02 + (omegaNeck * 0.12);
+                        if (pos[i * 3 + 1] > 3.2) pos[i * 3 + 1] = 1.35;
                     }
                     neckAirParticles.geometry.attributes.position.needsUpdate = true;
                     neckAirParticles.visible = true;
@@ -2031,14 +2323,110 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             renderer.render(scene, camera);
         }
 
-        function resetCamera() {
-            if (fansRootGroup) fansRootGroup.rotation.set(0, 0, 0);
-            camera.position.set(0, 2.2, 7.8);
-            camera.lookAt(0, 0, 0);
+        function resetCameraView() {
+            if (fansRootGroup) {
+                fansRootGroup.rotation.set(DEFAULT_CAM_ROT_X, DEFAULT_CAM_ROT_Y, 0);
+            }
+            lastUserInteractionTime = Date.now();
+            showToast('กลับสู่มุมมองเฉียงหน้าเริ่มต้น');
         }
 
-        // --- Chart.js Telemetry Graph ---
+        // Hub Status LEDs (Green=normal, Orange=derate, Red=cut/stop, Gray=off)
+        function updateHubLedStatus(isCutOrStop, isDerate) {
+            let ledColor = 0x5D6B66; // Gray
+            if (isCutOrStop) ledColor = 0xC8402F;
+            else if (isDerate) ledColor = 0xE0702B;
+            else if (targetSpeedBody > 0 || targetSpeedNeck > 0) ledColor = 0x2E9E6B;
+
+            hubLedMeshes.forEach(mesh => {
+                mesh.material.color.setHex(ledColor);
+            });
+        }
+
+        // Tap Fan Inspector
+        function handleFanClick(e) {
+            const container = $('#canvas-container');
+            const rect = container.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((e.clientX - rect.left) / container.clientWidth) * 2 - 1,
+                -((e.clientY - rect.top) / container.clientHeight) * 2 + 1
+            );
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(fanPickMeshes);
+
+            if (intersects.length > 0) {
+                const fanId = intersects[0].object.userData.fanId;
+                showFanInspector(fanId);
+            }
+        }
+
+        function showFanInspector(fanId) {
+            const card = $('#fan-inspector-card');
+            const nameEl = $('#inspect-fan-name');
+            const pctEl = $('#inspect-fan-pct');
+            const rpmEl = $('#inspect-fan-rpm');
+            const stEl = $('#inspect-fan-status');
+
+            let name = "พัดลมตัว 70mm (A/B)", pct = latestTel.b;
+            if (fanId === 'neck') { name = "พัดลมบ่า 40mm (คู่)"; pct = latestTel.n; }
+            if (fanId === 'bat')  { name = "พัดลมแบตเตอรี่ 30mm"; pct = latestTel.bat; }
+
+            nameEl.textContent = name;
+            pctEl.textContent = pct + '%';
+            rpmEl.textContent = `${Math.round(pct * FAN_PHYSICS.rpmFactor)} RPM`;
+
+            if (latestTel.f & 1) { stEl.textContent = 'หยุด / ตัดวงจร'; stEl.className = 'font-semibold text-calm-cut'; }
+            else if (latestTel.f & 4) { stEl.textContent = 'ลดโหลด (Derated)'; stEl.className = 'font-semibold text-calm-derate'; }
+            else if (pct > 0) { stEl.textContent = 'กำลังทำงานปกติ'; stEl.className = 'font-semibold text-calm-ok'; }
+            else { stEl.textContent = 'สแตนด์บาย (OFF)'; stEl.className = 'font-semibold text-calm-muted'; }
+
+            card.classList.remove('hidden');
+        }
+
+        function hideFanInspector() {
+            $('#fan-inspector-card').classList.add('hidden');
+        }
+
+        // --- Chart.js Telemetry Graph with 40/50/60°C Horizontal Threshold Lines ---
         let telemetryChart = null;
+
+        // Custom Chart.js Plugin for Horizontal Dashed Threshold Lines
+        const thresholdLinePlugin = {
+            id: 'thresholdLines',
+            afterDraw(chart) {
+                const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+                if (!y) return;
+
+                const lines = [
+                    { val: 40, color: 'rgba(217, 144, 47, 0.75)', label: '40°C พัดลมแบต' },
+                    { val: 50, color: 'rgba(224, 112, 43, 0.85)', label: '50°C ลดโหลด 60%' },
+                    { val: 60, color: 'rgba(200, 64, 47, 0.95)', label: '60°C ตัดวงจร' }
+                ];
+
+                ctx.save();
+                ctx.setLineDash([4, 4]);
+                ctx.lineWidth = 1.2;
+
+                lines.forEach(l => {
+                    const yPos = y.getPixelForValue(l.val);
+                    if (yPos >= chart.chartArea.top && yPos <= chart.chartArea.bottom) {
+                        ctx.strokeStyle = l.color;
+                        ctx.beginPath();
+                        ctx.moveTo(left, yPos);
+                        ctx.lineTo(right, yPos);
+                        ctx.stroke();
+
+                        ctx.fillStyle = l.color;
+                        ctx.font = '10px monospace';
+                        ctx.fillText(l.label, right - 80, yPos - 3);
+                    }
+                });
+                ctx.restore();
+            }
+        };
+
         function initChart() {
             const ctx = document.getElementById('telemetryChart').getContext('2d');
             telemetryChart = new Chart(ctx, {
@@ -2050,7 +2438,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                             label: 'อากาศ (°C)',
                             data: Array(12).fill(34),
                             borderColor: '#0ea5e9',
-                            backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                            backgroundColor: 'rgba(14, 165, 233, 0.08)',
                             borderWidth: 2,
                             tension: 0.35,
                             fill: true
@@ -2059,7 +2447,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                             label: 'แบต NTC (°C)',
                             data: Array(12).fill(30),
                             borderColor: '#f59e0b',
-                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            backgroundColor: 'rgba(245, 158, 11, 0.08)',
                             borderWidth: 2,
                             tension: 0.35,
                             fill: true
@@ -2071,13 +2459,18 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { ticks: { color: currentTheme === 'dark' ? '#94a3b8' : '#64748b', font: { size: 10 } } },
-                        y: { ticks: { color: currentTheme === 'dark' ? '#94a3b8' : '#64748b', font: { size: 10 } } }
+                        x: { ticks: { color: currentTheme === 'dark' ? '#8B9B95' : '#5D6B66', font: { size: 10 } } },
+                        y: {
+                            min: 20,
+                            max: 65,
+                            ticks: { color: currentTheme === 'dark' ? '#8B9B95' : '#5D6B66', font: { size: 10 } }
+                        }
                     }
-                }
+                },
+                plugins: [thresholdLinePlugin]
             });
 
-            // Update chart every 2 seconds
+            // Update chart data point every 2s
             setInterval(() => {
                 if (!telemetryChart) return;
                 const d0 = telemetryChart.data.datasets[0].data;
@@ -2090,7 +2483,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
 
         function updateChartTheme(theme) {
             if (!telemetryChart) return;
-            const col = (theme === 'dark') ? '#94a3b8' : '#64748b';
+            const col = (theme === 'dark') ? '#8B9B95' : '#5D6B66';
             telemetryChart.options.scales.x.ticks.color = col;
             telemetryChart.options.scales.y.ticks.color = col;
             telemetryChart.update();
@@ -2198,6 +2591,18 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             if (note) note.style.display = SIMULATED_SENSORS ? 'block' : 'none';
         }
 
+        // Desktop Uptime Counter
+        function startUptimeClock() {
+            setInterval(() => {
+                const diff = Math.floor((Date.now() - sessionStartTime) / 1000);
+                const h = Math.floor(diff / 3600);
+                const m = Math.floor((diff % 3600) / 60);
+                const s = diff % 60;
+                $('#top-uptime-val').textContent = 
+                    `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
             init3D();
@@ -2206,6 +2611,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             loadPresets();
             applyTheme(currentTheme);
             applySimulationBadges();
+            startUptimeClock();
 
             // PWA Service Worker Registration
             if ('serviceWorker' in navigator && location.protocol === 'https:') {
