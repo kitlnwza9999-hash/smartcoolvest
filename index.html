@@ -201,72 +201,75 @@
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 9999px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col pb-28">
+<body class="min-h-screen flex flex-col">
 
     <!-- =========================================================================
          SECTION 2: TOP STATUS BAR (แถบสถานะด้านบน สูง 56px สไตล์ Calm Utility)
          ========================================================================= -->
-    <header class="sticky top-0 z-40 glass-top-bar h-14 sm:h-16 px-3 sm:px-6 transition-colors flex items-center justify-between gap-2">
+    <header class="sticky top-0 z-40 glass-top-bar h-14 sm:h-16 px-2.5 sm:px-6 transition-colors flex items-center justify-between gap-1.5 sm:gap-3">
         
         <!-- Left: Logo & Device Name + Connection Pill -->
-        <div class="flex items-center space-x-2 sm:space-x-3 min-w-0">
-            <div class="flex items-center space-x-1.5 shrink-0">
-                <span class="text-xl">🦺</span>
-                <span class="font-bold text-sm sm:text-base tracking-tight text-calm-text dark:text-darkCalm-text">SmartVest</span>
+        <div class="flex items-center space-x-1.5 sm:space-x-3 min-w-0 shrink-0">
+            <div class="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
+                <span class="text-lg sm:text-xl">🦺</span>
+                <span class="font-extrabold text-sm sm:text-base tracking-tight text-calm-text dark:text-darkCalm-text">SmartVest</span>
             </div>
 
             <!-- Connection Pill (Clickable to connect, Color + Text always) -->
-            <button id="btn-top-conn" onclick="handleTopConnClick()" class="calm-btn flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer" title="แตะเพื่อเชื่อมต่อ Bluetooth">
-                <i data-lucide="bluetooth" class="w-4 h-4 text-white"></i>
+            <button id="btn-top-conn" onclick="handleTopConnClick()" class="calm-btn flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer" title="แตะเพื่อเชื่อมต่อ Bluetooth">
+                <i data-lucide="bluetooth" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"></i>
                 <span id="top-conn-dot" class="relative flex h-2 w-2">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                 </span>
-                <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight">เชื่อมต่อ Bluetooth</span>
+                <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight">
+                    <span class="inline sm:hidden">เชื่อมต่อ</span>
+                    <span class="hidden sm:inline">เชื่อมต่อ Bluetooth</span>
+                </span>
             </button>
 
             <!-- Active Mode Pill (Always reflects current active controller) -->
-            <div id="top-mode-pill" class="hidden sm:flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-calm-accent/10 text-calm-accentText dark:text-darkCalm-accent border border-calm-accent/25 truncate max-w-[210px]" title="โหมดการควบคุมปัจจุบัน">
+            <div id="top-mode-pill" class="hidden md:flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-calm-accent/10 text-calm-accentText dark:text-darkCalm-accent border border-calm-accent/25 truncate max-w-[180px]" title="โหมดการควบคุมปัจจุบัน">
                 <span>โหมด: ควบคุมเอง</span>
             </div>
         </div>
 
         <!-- Right: Current Level + Battery Indicator + Actions -->
-        <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
+        <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
             
             <!-- Desktop Uptime Counter -->
-            <div id="top-uptime-display" class="hidden lg:flex items-center text-[11px] font-mono text-calm-muted dark:text-darkCalm-muted space-x-1" title="เวลาทำงานของรอบนี้">
+            <div id="top-uptime-display" class="hidden xl:flex items-center text-[11px] font-mono text-calm-muted dark:text-darkCalm-muted space-x-1" title="เวลาทำงานของรอบนี้">
                 <span>⏱️</span>
                 <span id="top-uptime-val">00:00:00</span>
             </div>
 
-            <!-- Current Level Quick Badge -->
-            <div id="top-level-badge" class="px-2.5 py-1 rounded-xl text-xs font-black bg-calm-sub dark:bg-darkCalm-sub text-calm-text dark:text-darkCalm-text border border-calm-muted/20 tabular-nums">
+            <!-- Current Level Quick Badge (Hidden on mobile to save space, prominent in hero) -->
+            <div id="top-level-badge" class="hidden sm:block px-2.5 py-1 rounded-xl text-xs font-black bg-calm-sub dark:bg-darkCalm-sub text-calm-text dark:text-darkCalm-text border border-calm-muted/20 tabular-nums">
                 OFF · 0%
             </div>
 
-            <!-- Battery SOC & Temp Indicator (Colored by Threshold) -->
-            <div id="top-battery-badge" class="flex items-center space-x-1.5 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-bold bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/20 tabular-nums">
+            <!-- Battery SOC Indicator (Colored by Threshold, Temp hidden on small mobile) -->
+            <div id="top-battery-badge" class="flex items-center space-x-1 px-2 sm:px-2.5 py-1 rounded-xl text-xs font-bold bg-calm-sub dark:bg-darkCalm-sub border border-calm-muted/20 tabular-nums">
                 <span id="top-bat-icon">🔋</span>
                 <span id="top-bat-soc">--%</span>
-                <span class="text-calm-muted/40">|</span>
-                <span id="top-bat-temp" class="text-calm-ok dark:text-darkCalm-ok">--.-°C</span>
+                <span class="hidden sm:inline text-calm-muted/40">|</span>
+                <span id="top-bat-temp" class="hidden sm:inline text-calm-ok dark:text-darkCalm-ok">--.-°C</span>
             </div>
 
-            <!-- Action Buttons (Min 44x44 px touch targets) -->
+            <!-- Action Buttons (Min 44x44 px touch targets, max 2-3 on mobile) -->
             <div class="flex items-center space-x-1">
                 <!-- Theme Toggle Button -->
-                <button id="btn-theme-toggle" onclick="toggleTheme()" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub" title="สลับธีม สว่าง/มืด">
+                <button id="btn-theme-toggle" onclick="toggleTheme()" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub cursor-pointer" title="สลับธีม สว่าง/มืด">
                     <i id="theme-icon" data-lucide="moon" class="w-5 h-5"></i>
                 </button>
 
-                <!-- Help Quick Guide '?' -->
-                <button onclick="toggleHelpModal(true)" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub font-bold text-base" title="คู่มือการใช้งาน">
+                <!-- Help Quick Guide '?' (Desktop/Tablet) -->
+                <button onclick="toggleHelpModal(true)" class="hidden sm:flex calm-btn w-11 h-11 rounded-xl items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub font-bold text-base cursor-pointer" title="คู่มือการใช้งาน">
                     ?
                 </button>
 
-                <!-- More Menu '⋯' (Hosts Developer Tools, Clean on all devices) -->
-                <button onclick="toggleDevModal(true)" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub font-black text-lg tracking-tighter" title="เมนูเพิ่มเติม / เครื่องมือผู้พัฒนา">
+                <!-- More Menu '⋯' (All devices, includes Help & Tools on mobile) -->
+                <button onclick="toggleDevModal(true)" class="calm-btn w-11 h-11 rounded-xl flex items-center justify-center text-calm-text dark:text-darkCalm-text hover:bg-calm-sub dark:hover:bg-darkCalm-sub font-black text-lg tracking-tighter cursor-pointer" title="เมนูเพิ่มเติม / เครื่องมือผู้พัฒนา">
                     ⋯
                 </button>
             </div>
@@ -274,13 +277,13 @@
     </header>
 
     <!-- Disconnect Banner Warning -->
-    <div id="disconn-alert" class="hidden bg-calm-cut/10 border-b border-calm-cut/20 px-4 py-2.5 text-xs sm:text-sm font-semibold text-calm-cut dark:text-darkCalm-cut text-center flex items-center justify-center gap-2">
+    <div id="disconn-alert" class="hidden bg-calm-cut/10 border-b border-calm-cut/20 px-3 py-2 text-xs sm:text-sm font-semibold text-calm-cut dark:text-darkCalm-cut text-center flex items-center justify-center gap-2">
         <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0"></i>
         <span>ขาดการเชื่อมต่อ Bluetooth! พัดลมอาจยังคงทำงานอยู่ที่ค่าล่าสุด แตะแถบสถานะด้านบนเพื่อเชื่อมต่อใหม่</span>
     </div>
 
     <!-- Main Content Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 space-y-4 sm:space-y-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 space-y-4 sm:space-y-6 pb-40 sm:pb-32">
 
         
         <!-- =========================================================================
@@ -381,25 +384,25 @@
              SECTION 4: FULL-WIDTH HERO STATUS CARD (มองเห็นชัดจากระยะไกล)
              ========================================================================= -->
         <div id="hero-status-card" class="calm-card p-4 sm:p-6 border-l-[6px] border-l-calm-ok transition-colors">
-            <div class="flex flex-wrap items-center justify-between gap-2 mb-1.5">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
                 <div class="flex items-center space-x-3">
-                    <span id="hero-icon" class="text-2xl sm:text-3xl">🟢</span>
-                    <div>
-                        <h2 id="hero-title" class="text-lg sm:text-2xl font-extrabold text-calm-text dark:text-darkCalm-text tracking-tight leading-tight">
+                    <span id="hero-icon" class="text-2xl sm:text-3xl shrink-0">🟢</span>
+                    <div class="min-w-0">
+                        <h2 id="hero-title" class="text-base sm:text-2xl font-extrabold text-calm-text dark:text-darkCalm-text tracking-tight leading-tight truncate">
                             พร้อมใช้งาน (สแตนด์บาย)
                         </h2>
                         <div class="flex items-center gap-2 mt-0.5">
-                            <span id="hero-tag" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-calm-ok/10 text-calm-ok dark:text-darkCalm-ok border border-calm-ok/30">
+                            <span id="hero-tag" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-calm-ok/10 text-calm-ok dark:text-darkCalm-ok border border-calm-ok/30 shrink-0">
                                 ระบบปกติ
                             </span>
-                            <span id="hero-mobile-mode" class="sm:hidden text-[11px] text-calm-muted dark:text-darkCalm-muted font-medium">
+                            <span id="hero-mobile-mode" class="sm:hidden text-[11px] text-calm-muted dark:text-darkCalm-muted font-medium truncate">
                                 โหมด: ควบคุมเอง
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <div id="hero-rpm-summary" class="text-right text-xs text-calm-muted dark:text-darkCalm-muted font-medium">
+                <div id="hero-rpm-summary" class="flex sm:flex-col justify-between sm:text-right text-xs text-calm-muted dark:text-darkCalm-muted font-medium pt-1.5 sm:pt-0 border-t sm:border-0 border-calm-muted/10">
                     <div>พัดลมตัวจริง: <b id="hero-rpm-body" class="text-calm-accent dark:text-darkCalm-accent">0%</b></div>
                     <div>พัดลมบ่าจริง: <b id="hero-rpm-neck" class="text-calm-accent dark:text-darkCalm-accent">0%</b></div>
                 </div>
@@ -440,7 +443,7 @@
                 </div>
 
                 <!-- 3D Canvas Box -->
-                <div id="canvas-container" class="w-full h-[300px] sm:h-[350px] lg:h-[390px] rounded-2xl bg-calm-sub/60 dark:bg-darkCalm-sub/40 relative flex items-center justify-center overflow-hidden border border-calm-muted/10 cursor-grab active:cursor-grabbing touch-none">
+                <div id="canvas-container" class="w-full h-[220px] sm:h-[320px] lg:h-[390px] rounded-2xl bg-calm-sub/60 dark:bg-darkCalm-sub/40 relative flex items-center justify-center overflow-hidden border border-calm-muted/10 cursor-grab active:cursor-grabbing touch-none">
                     <canvas id="three-canvas" class="w-full h-full"></canvas>
 
                     <!-- 2D SVG/CSS Fallback (Shown if WebGL unsupported) -->
@@ -857,10 +860,10 @@
     <!-- =========================================================================
          STICKY BOTTOM EMERGENCY STOP BUTTON (คำนึงถึง safe-area-inset-bottom)
          ========================================================================= -->
-    <div class="fixed bottom-0 left-0 right-0 z-30 px-3 sm:px-4 pointer-events-none" style="padding-bottom: max(12px, env(safe-area-inset-bottom));">
-        <div class="max-w-xl mx-auto">
-            <button id="btn-stop" onclick="handleEmergencyStop()" class="calm-btn pointer-events-auto w-full min-h-[58px] rounded-2xl bg-calm-cut text-white font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl border border-white/20">
-                <i data-lucide="octagon-alert" class="w-6 h-6"></i>
+    <div class="fixed bottom-0 left-0 right-0 z-30 px-3 sm:px-4 py-2 pointer-events-none bg-gradient-to-t from-slate-100/95 via-slate-100/70 to-transparent dark:from-slate-950/95 dark:via-slate-950/70 backdrop-blur-[2px]" style="padding-bottom: max(12px, env(safe-area-inset-bottom));">
+        <div class="max-w-md mx-auto">
+            <button id="btn-stop" onclick="handleEmergencyStop()" class="calm-btn pointer-events-auto w-full min-h-[50px] sm:min-h-[56px] rounded-2xl bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-black text-sm sm:text-base flex items-center justify-center gap-2 shadow-xl shadow-rose-600/30 border border-white/25 transition-all cursor-pointer">
+                <i data-lucide="octagon-alert" class="w-5 h-5 shrink-0"></i>
                 <span>⛔ STOP หยุดฉุกเฉิน (ดับพัดลมทันที)</span>
             </button>
         </div>
@@ -941,36 +944,53 @@
         </div>
     </div>
 
-    <!-- Modal: Developer & Testing Tools (from '⋯' menu) -->
+    <!-- Modal: More Menu & Developer Tools (from '⋯' button) -->
     <div id="dev-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-black/50 backdrop-blur-sm hidden">
-        <div class="calm-card max-w-md w-full p-5 space-y-4">
+        <div class="calm-card max-w-md w-full p-5 space-y-4 max-h-[85vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b border-calm-muted/15 pb-2.5">
                 <h3 class="font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-2">
-                    <i data-lucide="wrench" class="w-4 h-4 text-calm-warn"></i> เครื่องมือผู้พัฒนาและทดสอบ
+                    <span>⚙️ เมนูเพิ่มเติมและเครื่องมือ</span>
                 </h3>
                 <button onclick="toggleDevModal(false)" class="text-calm-muted hover:text-calm-text text-lg font-bold">✕</button>
             </div>
-            <div class="space-y-3 text-xs">
-                <div class="flex items-center justify-between py-1 border-b border-calm-muted/15">
-                    <label for="chk-fast-test" class="font-semibold text-calm-text dark:text-darkCalm-text">⚡ โหมดทดสอบเร็ว (1 นาที = 6 วินาที)</label>
-                    <input type="checkbox" id="chk-fast-test" onchange="sendCmd(12, this.checked ? 1 : 0); showToast(this.checked ? 'เปิดโหมดทดสอบเร็ว' : 'ปิดโหมดทดสอบเร็ว')">
+            <div class="space-y-3.5 text-xs">
+                <!-- Mobile Guide Shortcut -->
+                <button onclick="toggleDevModal(false); toggleHelpModal(true);" class="calm-btn w-full p-3 rounded-xl bg-calm-accent/10 hover:bg-calm-accent/20 text-calm-accentText dark:text-darkCalm-accent font-bold flex items-center justify-between border border-calm-accent/20">
+                    <span class="flex items-center gap-2">📖 คู่มือการใช้งานย่อ (Quick Guide)</span>
+                    <span>➔</span>
+                </button>
+
+                <!-- Session Uptime for Mobile -->
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-calm-muted dark:text-darkCalm-muted">
+                    <span class="flex items-center gap-1.5 font-semibold">⏱️ เวลาทำงานของรอบนี้:</span>
+                    <span id="modal-uptime-val" class="font-mono font-bold text-calm-text dark:text-darkCalm-text">00:00:00</span>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="sendCmd(6, 0); showToast('สลับจำลองแบตร้อน')" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
-                        🔥 จำลองแบตร้อน
-                    </button>
-                    <button onclick="sendCmd(5, 0); showToast('ส่งคำสั่งรีเซ็ต')" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
-                        🔄 ส่งรีเซ็ต
-                    </button>
-                    <button onclick="startWifiMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
-                        📶 สลับ Wi-Fi AP
-                    </button>
-                    <button onclick="startDemoMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
-                        🧪 โหมด Demo
-                    </button>
-                </div>
-                <div id="raw-tele-box" class="p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[10px] font-mono text-calm-muted break-all">
-                    Telemetry Raw: รอข้อมูล...
+
+                <div class="pt-2 border-t border-calm-muted/15">
+                    <div class="font-bold text-calm-text dark:text-darkCalm-text mb-2 flex items-center gap-1.5">
+                        <i data-lucide="wrench" class="w-3.5 h-3.5 text-calm-warn"></i> เครื่องมือทดสอบและผู้พัฒนา
+                    </div>
+                    <div class="flex items-center justify-between py-1 border-b border-calm-muted/15 mb-2.5">
+                        <label for="chk-fast-test" class="font-semibold text-calm-text dark:text-darkCalm-text">⚡ โหมดทดสอบเร็ว (1 นาที = 6 วินาที)</label>
+                        <input type="checkbox" id="chk-fast-test" onchange="sendCmd(12, this.checked ? 1 : 0); showToast(this.checked ? 'เปิดโหมดทดสอบเร็ว' : 'ปิดโหมดทดสอบเร็ว')">
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="sendCmd(6, 0); showToast('สลับจำลองแบตร้อน')" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
+                            🔥 จำลองแบตร้อน
+                        </button>
+                        <button onclick="sendCmd(5, 0); showToast('ส่งคำสั่งรีเซ็ต')" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
+                            🔄 ส่งรีเซ็ต
+                        </button>
+                        <button onclick="startWifiMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
+                            📶 สลับ Wi-Fi AP
+                        </button>
+                        <button onclick="startDemoMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
+                            🧪 โหมด Demo
+                        </button>
+                    </div>
+                    <div id="raw-tele-box" class="p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[10px] font-mono text-calm-muted break-all mt-2.5">
+                        Telemetry Raw: รอข้อมูล...
+                    </div>
                 </div>
             </div>
         </div>
@@ -1221,11 +1241,14 @@
 
             // Update Top Bar indicators
             $('#top-bat-soc').textContent = d.soc + '%';
-            $('#top-bat-temp').textContent = d.tb.toFixed(1) + '°C';
-            if (d.tb >= 60) $('#top-bat-temp').className = "text-calm-cut dark:text-darkCalm-cut font-black";
-            else if (d.tb >= 50) $('#top-bat-temp').className = "text-calm-derate dark:text-darkCalm-derate font-bold";
-            else if (d.tb >= 40) $('#top-bat-temp').className = "text-calm-warn dark:text-darkCalm-warn font-bold";
-            else $('#top-bat-temp').className = "text-calm-ok dark:text-darkCalm-ok";
+            const tbEl = $('#top-bat-temp');
+            if (tbEl) {
+                tbEl.textContent = d.tb.toFixed(1) + '°C';
+                if (d.tb >= 60) tbEl.className = "hidden sm:inline text-calm-cut dark:text-darkCalm-cut font-black";
+                else if (d.tb >= 50) tbEl.className = "hidden sm:inline text-calm-derate dark:text-darkCalm-derate font-bold";
+                else if (d.tb >= 40) tbEl.className = "hidden sm:inline text-calm-warn dark:text-darkCalm-warn font-bold";
+                else tbEl.className = "hidden sm:inline text-calm-ok dark:text-darkCalm-ok";
+            }
 
             // Battery Linear Gauge Fill & Dashed line
             const fillPct = Math.min(100, Math.max(0, (d.tb / 60) * 100));
@@ -1659,14 +1682,17 @@
             } else {
                 // Disconnected (NONE)
                 if (btn) {
-                    btn.className = "calm-btn flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer";
+                    btn.className = "calm-btn flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer";
                     btn.innerHTML = `
-                        <i data-lucide="bluetooth" class="w-4 h-4 text-white"></i>
+                        <i data-lucide="bluetooth" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"></i>
                         <span id="top-conn-dot" class="relative flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                         </span>
-                        <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight">เชื่อมต่อ Bluetooth</span>
+                        <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight">
+                            <span class="inline sm:hidden">เชื่อมต่อ</span>
+                            <span class="hidden sm:inline">เชื่อมต่อ Bluetooth</span>
+                        </span>
                     `;
                 }
                 if (heroBanner) heroBanner.classList.remove('hidden');
