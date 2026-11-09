@@ -497,9 +497,9 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
 
                 <!-- 3 Fans Telemetry Footer Summary -->
                 <div class="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-calm-muted/10 text-center text-[11px] font-semibold text-calm-muted dark:text-darkCalm-muted tabular-nums">
-                    <div>ตัว 70mm: <b id="lbl-rpm-body" class="text-calm-text dark:text-darkCalm-text">0%</b></div>
-                    <div>บ่า 40mm: <b id="lbl-rpm-neck" class="text-calm-text dark:text-darkCalm-text">0%</b></div>
-                    <div>แบต 30mm: <b id="lbl-rpm-bat" class="text-calm-warn">0%</b></div>
+                    <div>เอว 70mm (คู่): <b id="lbl-rpm-body" class="text-calm-text dark:text-darkCalm-text">0%</b></div>
+                    <div>บ่า 40mm (คู่): <b id="lbl-rpm-neck" class="text-calm-text dark:text-darkCalm-text">0%</b></div>
+                    <div>บอร์ด/แบต 30mm: <b id="lbl-rpm-bat" class="text-calm-warn">0%</b></div>
                 </div>
             </div>
 
@@ -2234,6 +2234,12 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             lucide.createIcons();
             localStorage.setItem('smartvest_theme', theme);
             if (telemetryChart) updateChartTheme(theme);
+            if (scene) {
+                scene.background = new THREE.Color(theme === 'dark' ? 0x0b111a : 0xf8fafc);
+                if (vestMat) vestMat.color.setHex(theme === 'dark' ? 0x162032 : 0x1e293b);
+                if (pedestalMesh) pedestalMesh.material.color.setHex(theme === 'dark' ? 0x0f172a : 0xe2e8f0);
+                if (glowRingMesh) glowRingMesh.material.color.setHex(theme === 'dark' ? 0x0284c7 : 0x38bdf8);
+            }
         }
 
         function toggleTheme() { applyTheme(currentTheme === 'light' ? 'dark' : 'light'); }
@@ -2249,14 +2255,15 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         }
 
         // =========================================================================
-        // SECTION 5: 3D REAL FAN SCENE WITH INERTIA & AIRFLOW PARTICLES
+        // SECTION 5: 3D HIGH-TECH 5-FAN PROPULSION ASSEMBLY & INERTIA SIMULATION
         // =========================================================================
         let scene, camera, renderer;
         let animatedBodyFans = [], animatedNeckFans = [], animatedBatFans = [];
         let ghostDiscs = [];
         let hubLedMeshes = [];
         let fanPickMeshes = [];
-        let bodyAirParticles, neckAirParticles;
+        let waistAirParticles, neckAirParticles;
+        let statusLedMesh = null, pedestalMesh = null, glowRingMesh = null;
 
         let isDragging = false, previousMousePosition = { x: 0, y: 0 };
         let lastUserInteractionTime = 0;
@@ -2267,7 +2274,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         let targetSpeedBody = 0, targetSpeedNeck = 0, targetSpeedBat = 0;
 
         // Default Camera Angle
-        const DEFAULT_CAM_ROT_X = -0.15;
+        const DEFAULT_CAM_ROT_X = -0.10;
         const DEFAULT_CAM_ROT_Y = 0.22;
 
         function init3D() {
@@ -2282,20 +2289,28 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             scene = new THREE.Scene();
             scene.background = new THREE.Color(currentTheme === 'dark' ? 0x0b111a : 0xf8fafc);
 
-            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-            camera.position.set(0, 1.8, 7.6);
-            camera.lookAt(0, 0, 0);
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(0, 0.2, 5.2);
+            camera.lookAt(0, 0.1, 0);
 
             renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
             scene.add(ambientLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-            dirLight.position.set(5, 10, 8);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(5, 8, 7);
             scene.add(dirLight);
+
+            const rimLight = new THREE.DirectionalLight(0x38bdf8, 0.75);
+            rimLight.position.set(-5, 4, -4);
+            scene.add(rimLight);
+
+            const fillLight = new THREE.DirectionalLight(0x0284c7, 0.35);
+            fillLight.position.set(0, -5, 4);
+            scene.add(fillLight);
 
             createRealFanAssemblies();
             createAirParticleStreams();
@@ -2341,57 +2356,64 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             animate3D();
         }
 
-        // Fan Unit Generator with Ghost Disc and Status Hub LED
-        function createFanUnit(fanId, radius, depth, bladeCount, bladeColor, frameColor) {
+        // Fan Unit Generator with Bezel, Outer Housing, Wireframe Grille, Rotor, LED & Ghost Disc
+        function createFanUnit(fanId, radius, depth, bladeCount, bladeColor, frameColor, isBat = false) {
             const group = new THREE.Group();
 
-            const frameMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.5, metalness: 0.25 });
-            const hubMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, metalness: 0.6 });
-            const bladeMat = new THREE.MeshPhysicalMaterial({ color: bladeColor, roughness: 0.2, metalness: 0.1, transparent: true, opacity: 0.9 });
+            const frameMat = new THREE.MeshStandardMaterial({ color: frameColor, roughness: 0.4, metalness: 0.35 });
+            const hubMat = new THREE.MeshStandardMaterial({ color: bladeColor, roughness: 0.25, metalness: 0.6 });
+            const bladeMat = new THREE.MeshPhysicalMaterial({ color: bladeColor, roughness: 0.2, metalness: 0.15, transparent: true, opacity: 0.95 });
 
-            // Housing Ring
+            // Bezel / Shroud Mount
+            const bezel = new THREE.Mesh(new THREE.CylinderGeometry(radius * 1.08, radius * 1.12, depth * 0.3, 32), frameMat);
+            bezel.rotation.x = Math.PI / 2;
+            bezel.position.z = -depth * 0.32;
+            group.add(bezel);
+
+            // Outer Housing Ring
             const ring = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, depth, 32, 1, true), frameMat);
             ring.rotation.x = Math.PI / 2;
             group.add(ring);
 
-            // Frame Backing
-            const flange = new THREE.Mesh(new THREE.BoxGeometry(radius * 1.95, radius * 1.95, depth * 0.5), frameMat);
-            flange.position.z = -depth * 0.25;
-            group.add(flange);
+            // Tech Grille Spoke Wireframe
+            const grillMat = new THREE.MeshBasicMaterial({ color: 0x475569, wireframe: true });
+            const grill = new THREE.Mesh(new THREE.CircleGeometry(radius * 0.97, 16), grillMat);
+            grill.position.z = depth * 0.48;
+            group.add(grill);
 
-            // Spinning Rotor
+            // Rotor Assembly
             const rotor = new THREE.Group();
-            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.28, radius * 0.28, depth * 1.05, 16), hubMat);
+            const hub = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.3, radius * 0.3, depth * 0.85, 20), hubMat);
             hub.rotation.x = Math.PI / 2;
             rotor.add(hub);
 
             // Hub Status LED Ring
-            const hubLed = new THREE.Mesh(
-                new THREE.RingGeometry(radius * 0.08, radius * 0.22, 16),
-                new THREE.MeshBasicMaterial({ color: 0x5D6B66, side: THREE.DoubleSide })
+            const led = new THREE.Mesh(
+                new THREE.RingGeometry(radius * 0.08, radius * 0.22, 20),
+                new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide })
             );
-            hubLed.position.z = depth * 0.56;
-            rotor.add(hubLed);
-            hubLedMeshes.push(hubLed);
+            led.position.z = depth * 0.44;
+            rotor.add(led);
+            hubLedMeshes.push(led);
 
-            // Curved Blades
+            // Curved Aerodynamic Blades
             for (let i = 0; i < bladeCount; i++) {
                 const angle = (Math.PI * 2 / bladeCount) * i;
-                const blade = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.62, depth * 0.14, radius * 0.18), bladeMat);
-                blade.position.set(Math.cos(angle) * (radius * 0.44), Math.sin(angle) * (radius * 0.44), 0);
+                const blade = new THREE.Mesh(new THREE.BoxGeometry(radius * 0.62, depth * 0.1, radius * 0.16), bladeMat);
+                blade.position.set(Math.cos(angle) * (radius * 0.46), Math.sin(angle) * (radius * 0.46), 0);
                 blade.rotation.z = angle + 0.35;
-                blade.rotation.y = 0.35;
+                blade.rotation.y = 0.25;
                 rotor.add(blade);
             }
 
-            // Ghost Disc (Motion blur disc active at >= 60%)
+            // Ghost Disc (Motion Blur active at >= 50%)
             const ghostMat = new THREE.MeshBasicMaterial({
                 color: bladeColor,
                 transparent: true,
                 opacity: 0.0,
                 side: THREE.DoubleSide
             });
-            const ghostDisc = new THREE.Mesh(new THREE.RingGeometry(radius * 0.28, radius * 0.88, 32), ghostMat);
+            const ghostDisc = new THREE.Mesh(new THREE.RingGeometry(radius * 0.28, radius * 0.92, 32), ghostMat);
             ghostDisc.position.z = depth * 0.05;
             rotor.add(ghostDisc);
             ghostDiscs.push(ghostDisc);
@@ -2400,7 +2422,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
 
             // Click Pick Box for Inspector
             const pickBox = new THREE.Mesh(
-                new THREE.BoxGeometry(radius * 2, radius * 2, depth * 2),
+                new THREE.BoxGeometry(radius * 2.2, radius * 2.2, depth * 2.5),
                 new THREE.MeshBasicMaterial({ visible: false })
             );
             pickBox.userData = { fanId, radius };
@@ -2412,90 +2434,162 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
 
         function createRealFanAssemblies() {
             fansRootGroup = new THREE.Group();
-
-            // Set initial pleasant front-angle
             fansRootGroup.rotation.x = DEFAULT_CAM_ROT_X;
             fansRootGroup.rotation.y = DEFAULT_CAM_ROT_Y;
 
-            // 1. Dual Body Fans (70mm) - Left & Right
-            const bodyFan1 = createFanUnit('body', 0.95, 0.4, 7, 0x38bdf8, 0x1E2623);
-            bodyFan1.group.position.set(-1.3, -0.4, 0);
-            fansRootGroup.add(bodyFan1.group);
-            animatedBodyFans.push(bodyFan1.rotor);
+            // 1. Dual Shoulder Fans (40mm) - Top Left & Right
+            const neckFanL = createFanUnit('neck', 0.45, 0.22, 7, 0x38bdf8, 0x1e293b);
+            neckFanL.group.position.set(-0.82, 0.95, -0.05);
+            neckFanL.group.rotation.set(-0.15, 0.2, 0.1);
+            fansRootGroup.add(neckFanL.group);
+            animatedNeckFans.push(neckFanL.rotor);
 
-            const bodyFan2 = createFanUnit('body', 0.95, 0.4, 7, 0x38bdf8, 0x1E2623);
-            bodyFan2.group.position.set(1.3, -0.4, 0);
-            fansRootGroup.add(bodyFan2.group);
-            animatedBodyFans.push(bodyFan2.rotor);
+            const neckFanR = createFanUnit('neck', 0.45, 0.22, 7, 0x38bdf8, 0x1e293b);
+            neckFanR.group.position.set(0.82, 0.95, -0.05);
+            neckFanR.group.rotation.set(-0.15, -0.2, -0.1);
+            fansRootGroup.add(neckFanR.group);
+            animatedNeckFans.push(neckFanR.rotor);
 
-            // 2. Shoulder Micro-blower (Single paired assembly representing neck fans)
-            const neckFan = createFanUnit('neck', 0.72, 0.32, 5, 0x38bdf8, 0x1e293b);
-            neckFan.group.position.set(0, 1.35, -0.2);
-            neckFan.group.rotation.x = -0.25;
-            fansRootGroup.add(neckFan.group);
-            animatedNeckFans.push(neckFan.rotor);
+            // 2. Central Board & Battery Module with 30mm Fan - ELEVATED UP IN CLEAR SIGHT
+            const batFan = createFanUnit('bat', 0.36, 0.18, 5, 0xf59e0b, 0x334155, true);
+            batFan.group.position.set(0.0, 0.52, 0.12);
+            batFan.group.rotation.set(-0.08, 0, 0);
 
-            // 3. Battery Micro-fan (30mm) with Heatsink Plate
-            const batFan = createFanUnit('bat', 0.5, 0.24, 5, 0xD9902F, 0x3D4C46);
-            batFan.group.position.set(0, -0.3, -0.4);
-
-            const heatSink = new THREE.Mesh(
-                new THREE.BoxGeometry(1.2, 1.2, 0.2),
-                new THREE.MeshStandardMaterial({ color: 0x5D6B66, roughness: 0.4, metalness: 0.7 })
+            // Board & Battery Enclosure with Heatsink Fin detail
+            const boardEnclosure = new THREE.Group();
+            const mainCase = new THREE.Mesh(
+                new THREE.BoxGeometry(0.95, 0.82, 0.18),
+                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.35, metalness: 0.65 })
             );
-            heatSink.position.set(0, -0.3, -0.56);
-            fansRootGroup.add(heatSink);
+            boardEnclosure.add(mainCase);
 
+            // Aluminum Cooling Fins behind board fan
+            for (let i = -3; i <= 3; i++) {
+                const fin = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.85, 0.02, 0.06),
+                    new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.3, metalness: 0.8 })
+                );
+                fin.position.set(0, i * 0.08, -0.1);
+                boardEnclosure.add(fin);
+            }
+
+            // ESP32 Status LED Indicator on board
+            statusLedMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.035, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0x10b981 })
+            );
+            statusLedMesh.position.set(0.38, 0.32, 0.1);
+            boardEnclosure.add(statusLedMesh);
+
+            boardEnclosure.position.set(0, 0.52, 0.02);
+            boardEnclosure.rotation.set(-0.08, 0, 0);
+            fansRootGroup.add(boardEnclosure);
             fansRootGroup.add(batFan.group);
             animatedBatFans.push(batFan.rotor);
 
-            // Minimalist Modern Mounting Frame
-            const frameBar = new THREE.Mesh(
-                new THREE.CylinderGeometry(2.4, 2.5, 0.18, 32),
-                new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
+            // 3. Dual Waist / Body Fans (70mm) - LOWER SECTION, NICELY PROPORTIONED
+            const waistFanL = createFanUnit('body', 0.65, 0.28, 7, 0x0284c7, 0x0f172a);
+            waistFanL.group.position.set(-0.95, -0.52, 0.15);
+            waistFanL.group.rotation.set(0.08, 0.32, -0.06);
+            fansRootGroup.add(waistFanL.group);
+            animatedBodyFans.push(waistFanL.rotor);
+
+            const waistFanR = createFanUnit('body', 0.65, 0.28, 7, 0x0284c7, 0x0f172a);
+            waistFanR.group.position.set(0.95, -0.52, 0.15);
+            waistFanR.group.rotation.set(0.08, -0.32, 0.06);
+            fansRootGroup.add(waistFanR.group);
+            animatedBodyFans.push(waistFanR.rotor);
+
+            // 4. Aerospace Connecting Struts & Power Conduits
+            const strutMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.5 });
+            const conduitMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.4 });
+
+            const strutTopL = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.8, 12), strutMat);
+            strutTopL.position.set(-0.45, 0.75, 0.02);
+            strutTopL.rotation.z = -0.55;
+            fansRootGroup.add(strutTopL);
+
+            const strutTopR = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.8, 12), strutMat);
+            strutTopR.position.set(0.45, 0.75, 0.02);
+            strutTopR.rotation.z = 0.55;
+            fansRootGroup.add(strutTopR);
+
+            const strutBotL = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 1.1, 12), strutMat);
+            strutBotL.position.set(-0.52, -0.08, 0.08);
+            strutBotL.rotation.z = 0.68;
+            fansRootGroup.add(strutBotL);
+
+            const strutBotR = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 1.1, 12), strutMat);
+            strutBotR.position.set(0.52, -0.08, 0.08);
+            strutBotR.rotation.z = -0.68;
+            fansRootGroup.add(strutBotR);
+
+            const conduitL = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.05, 8), conduitMat);
+            conduitL.position.set(-0.5, -0.05, 0.12);
+            conduitL.rotation.z = 0.68;
+            fansRootGroup.add(conduitL);
+
+            const conduitR = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.05, 8), conduitMat);
+            conduitR.position.set(0.5, -0.05, 0.12);
+            conduitR.rotation.z = -0.68;
+            fansRootGroup.add(conduitR);
+
+            // 5. Sleek Base Pedestal with Glow Ring
+            pedestalMesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.6, 1.7, 0.08, 36),
+                new THREE.MeshStandardMaterial({ color: currentTheme === 'dark' ? 0x0f172a : 0xe2e8f0, roughness: 0.6, metalness: 0.3 })
             );
-            frameBar.position.y = -1.5;
-            fansRootGroup.add(frameBar);
+            pedestalMesh.position.y = -1.35;
+            fansRootGroup.add(pedestalMesh);
+
+            glowRingMesh = new THREE.Mesh(
+                new THREE.RingGeometry(1.4, 1.58, 36),
+                new THREE.MeshBasicMaterial({ color: 0x0284c7, side: THREE.DoubleSide })
+            );
+            glowRingMesh.rotation.x = Math.PI / 2;
+            glowRingMesh.position.y = -1.30;
+            fansRootGroup.add(glowRingMesh);
 
             scene.add(fansRootGroup);
         }
 
-        // Catmull-Rom Airflow Particle Streams (No Red! Cyan to Mint)
+        // Catmull-Rom Airflow Particle Streams (Dual Waist & Dual Neck Vortices)
         function createAirParticleStreams() {
-            // Body Streams
-            const countBody = 120;
-            const geoBody = new THREE.BufferGeometry();
-            const posBody = new Float32Array(countBody * 3);
-            for (let i = 0; i < countBody; i++) {
-                const side = (i % 2 === 0) ? -1.3 : 1.3;
-                posBody[i * 3] = side + (Math.random() - 0.5) * 0.7;
-                posBody[i * 3 + 1] = -0.4 + (Math.random() - 0.5) * 0.7;
-                posBody[i * 3 + 2] = 0.2 + Math.random() * 2.6;
+            // Waist Streams
+            const countWaist = 160;
+            const geoWaist = new THREE.BufferGeometry();
+            const posWaist = new Float32Array(countWaist * 3);
+            for (let i = 0; i < countWaist; i++) {
+                const side = (i % 2 === 0) ? -0.95 : 0.95;
+                posWaist[i * 3] = side + (Math.random() - 0.5) * 0.4;
+                posWaist[i * 3 + 1] = -0.52 + (Math.random() - 0.5) * 0.4;
+                posWaist[i * 3 + 2] = 0.2 + Math.random() * 2.8;
             }
-            geoBody.setAttribute('position', new THREE.BufferAttribute(posBody, 3));
-            bodyAirParticles = new THREE.Points(geoBody, new THREE.PointsMaterial({
+            geoWaist.setAttribute('position', new THREE.BufferAttribute(posWaist, 3));
+            waistAirParticles = new THREE.Points(geoWaist, new THREE.PointsMaterial({
                 color: 0x38bdf8,
                 size: 0.08,
                 transparent: true,
-                opacity: 0.75
+                opacity: 0.85
             }));
-            fansRootGroup.add(bodyAirParticles);
+            fansRootGroup.add(waistAirParticles);
 
-            // Neck Stream
-            const countNeck = 70;
+            // Neck Streams
+            const countNeck = 100;
             const geoNeck = new THREE.BufferGeometry();
             const posNeck = new Float32Array(countNeck * 3);
             for (let i = 0; i < countNeck; i++) {
-                posNeck[i * 3] = (Math.random() - 0.5) * 0.7;
-                posNeck[i * 3 + 1] = 1.35 + Math.random() * 1.8;
-                posNeck[i * 3 + 2] = -0.2 + (Math.random() - 0.5) * 0.6;
+                const side = (i % 2 === 0) ? -0.82 : 0.82;
+                posNeck[i * 3] = side + (Math.random() - 0.5) * 0.35;
+                posNeck[i * 3 + 1] = 0.95 + Math.random() * 2.0;
+                posNeck[i * 3 + 2] = -0.05 + (Math.random() - 0.5) * 0.35;
             }
             geoNeck.setAttribute('position', new THREE.BufferAttribute(posNeck, 3));
             neckAirParticles = new THREE.Points(geoNeck, new THREE.PointsMaterial({
                 color: 0x00e5ff,
                 size: 0.075,
                 transparent: true,
-                opacity: 0.75
+                opacity: 0.85
             }));
             fansRootGroup.add(neckAirParticles);
         }
@@ -2517,7 +2611,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             // Check prefers-reduced-motion
             const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             if (reducedMotion) {
-                if (bodyAirParticles) bodyAirParticles.visible = false;
+                if (waistAirParticles) waistAirParticles.visible = false;
                 if (neckAirParticles) neckAirParticles.visible = false;
                 renderer.render(scene, camera);
                 return;
@@ -2545,31 +2639,30 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             animatedNeckFans.forEach(f => f.rotation.z += omegaNeck);
             animatedBatFans.forEach(f => f.rotation.z += omegaBat);
 
-            // Ghost Discs Opacity Scaling (>= 60%)
+            // Ghost Discs Opacity Scaling (>= 50%)
             ghostDiscs.forEach(gd => {
-                if (currentSpeedBody >= FAN_PHYSICS.ghostDiscThreshold) {
-                    gd.material.opacity = Math.min(0.48, ((currentSpeedBody - 60) / 40) * 0.48);
+                if (currentSpeedBody >= 50) {
+                    gd.material.opacity = Math.min(0.42, ((currentSpeedBody - 50) / 50) * 0.42);
                     gd.visible = true;
                 } else {
                     gd.visible = false;
                 }
             });
 
-            // Airflow Particles Flow & Color (Cyan to Mint)
-            if (bodyAirParticles) {
+            // Airflow Particles Flow & Color (Cyan to Sky Blue)
+            if (waistAirParticles) {
                 if (currentSpeedBody > 0.5) {
-                    const pos = bodyAirParticles.geometry.attributes.position.array;
+                    const pos = waistAirParticles.geometry.attributes.position.array;
                     for (let i = 0; i < pos.length / 3; i++) {
-                        pos[i * 3 + 2] += 0.02 + (omegaBody * 0.12);
+                        pos[i * 3 + 2] += 0.03 + (omegaBody * 0.15);
                         if (pos[i * 3 + 2] > 3.2) pos[i * 3 + 2] = 0.25;
                     }
-                    bodyAirParticles.geometry.attributes.position.needsUpdate = true;
-                    // Interpolate color from soft sky blue to teal
+                    waistAirParticles.geometry.attributes.position.needsUpdate = true;
                     const t = currentSpeedBody / 100;
-                    bodyAirParticles.material.color.setRGB(0.22 * (1 - t) + 0.06 * t, 0.74 * (1 - t) + 0.55 * t, 0.97 * (1 - t) + 0.55 * t);
-                    bodyAirParticles.visible = true;
+                    waistAirParticles.material.color.setRGB(0.22 * (1 - t) + 0.06 * t, 0.74 * (1 - t) + 0.55 * t, 0.97 * (1 - t) + 0.55 * t);
+                    waistAirParticles.visible = true;
                 } else {
-                    bodyAirParticles.visible = false;
+                    waistAirParticles.visible = false;
                 }
             }
 
@@ -2577,8 +2670,8 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 if (currentSpeedNeck > 0.5) {
                     const pos = neckAirParticles.geometry.attributes.position.array;
                     for (let i = 0; i < pos.length / 3; i++) {
-                        pos[i * 3 + 1] += 0.02 + (omegaNeck * 0.12);
-                        if (pos[i * 3 + 1] > 3.2) pos[i * 3 + 1] = 1.35;
+                        pos[i * 3 + 1] += 0.03 + (omegaNeck * 0.15);
+                        if (pos[i * 3 + 1] > 2.8) pos[i * 3 + 1] = 0.95;
                     }
                     neckAirParticles.geometry.attributes.position.needsUpdate = true;
                     neckAirParticles.visible = true;
@@ -2587,26 +2680,48 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 }
             }
 
+            // Futuristic Organic Micro-Levitation
+            if (fansRootGroup && !isDragging) {
+                fansRootGroup.position.y = Math.sin(now * 0.0016) * 0.045;
+                fansRootGroup.rotation.z = Math.sin(now * 0.001) * 0.015;
+            }
+
+            // ESP32 Status LED Breathing Pulse
+            if (statusLedMesh) {
+                const pulse = 0.6 + Math.sin(now * 0.004) * 0.4;
+                statusLedMesh.material.color.setRGB(0.06 * pulse, 0.72 * pulse, 0.5 * pulse);
+            }
+
+            // Update Live Badge in 3D Box (#fan-3d-badge)
+            const badgeEl = $('#fan-3d-badge');
+            if (badgeEl) {
+                const rpmApprox = Math.round(currentSpeedBody * 45);
+                badgeEl.textContent = `${Math.round(currentSpeedBody)}% (${rpmApprox.toLocaleString()} RPM ประมาณการ)`;
+            }
+
+            updateHubLEDs();
             renderer.render(scene, camera);
         }
 
         function resetCameraView() {
             if (fansRootGroup) {
-                fansRootGroup.rotation.set(DEFAULT_CAM_ROT_X, DEFAULT_CAM_ROT_Y, 0);
+                fansRootGroup.rotation.x = DEFAULT_CAM_ROT_X;
+                fansRootGroup.rotation.y = DEFAULT_CAM_ROT_Y;
+                lastUserInteractionTime = Date.now();
             }
-            lastUserInteractionTime = Date.now();
-            showToast('กลับสู่มุมมองเฉียงหน้าเริ่มต้น');
         }
 
-        // Hub Status LEDs (Green=normal, Orange=derate, Red=cut/stop, Gray=off)
-        function updateHubLedStatus(isCutOrStop, isDerate) {
-            let ledColor = 0x5D6B66; // Gray
-            if (isCutOrStop) ledColor = 0xC8402F;
-            else if (isDerate) ledColor = 0xE0702B;
+        function updateHubLEDs() {
+            let ledColor = 0x5D6B66; // Off
+            const isCut = (latestTel && (latestTel.f & 1) !== 0) || userTappedStop;
+            const isDer = (latestTel && (latestTel.f & 4) !== 0) || (latestTel && latestTel.tb >= 50);
+
+            if (isCut) ledColor = 0xC8402F;
+            else if (isDer) ledColor = 0xE0702B;
             else if (targetSpeedBody > 0 || targetSpeedNeck > 0) ledColor = 0x2E9E6B;
 
             hubLedMeshes.forEach(mesh => {
-                mesh.material.color.setHex(ledColor);
+                if (mesh && mesh.material) mesh.material.color.setHex(ledColor);
             });
         }
 
@@ -2636,18 +2751,15 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             const rpmEl = $('#inspect-fan-rpm');
             const stEl = $('#inspect-fan-status');
 
-            let name = "พัดลมตัว 70mm (A/B)", pct = latestTel.b;
-            if (fanId === 'neck') { name = "พัดลมบ่า 40mm (คู่)"; pct = latestTel.n; }
-            if (fanId === 'bat')  { name = "พัดลมแบตเตอรี่ 30mm"; pct = latestTel.bat; }
+            let name = "พัดลมเอว 70mm (ซ้าย/ขวา)", pct = latestTel.b;
+            if (fanId === 'neck') { name = "พัดลมบ่า 40mm (ซ้าย/ขวา)"; pct = latestTel.n; }
+            else if (fanId === 'bat')  { name = "พัดลมบอร์ดและแบตเตอรี่ 30mm"; pct = latestTel.bat; }
 
             nameEl.textContent = name;
             pctEl.textContent = pct + '%';
-            rpmEl.textContent = `${Math.round(pct * FAN_PHYSICS.rpmFactor)} RPM`;
-
-            if (latestTel.f & 1) { stEl.textContent = 'หยุด / ตัดวงจร'; stEl.className = 'font-semibold text-calm-cut'; }
-            else if (latestTel.f & 4) { stEl.textContent = 'ลดโหลด (Derated)'; stEl.className = 'font-semibold text-calm-derate'; }
-            else if (pct > 0) { stEl.textContent = 'กำลังทำงานปกติ'; stEl.className = 'font-semibold text-calm-ok'; }
-            else { stEl.textContent = 'สแตนด์บาย (OFF)'; stEl.className = 'font-semibold text-calm-muted'; }
+            rpmEl.textContent = Math.round(pct * 45).toLocaleString() + ' RPM';
+            stEl.textContent = (pct > 0) ? 'กำลังหมุน' : 'ปิด';
+            stEl.className = (pct > 0) ? "font-semibold text-calm-ok" : "font-semibold text-calm-muted";
 
             card.classList.remove('hidden');
         }
