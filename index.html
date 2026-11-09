@@ -146,6 +146,72 @@
             border-bottom: 1px solid #223043;
         }
 
+                /* Smooth UI Interaction Animations (fade in/out, swap, pop) */
+        @keyframes tabSwapIn {
+            0% { opacity: 0; transform: translateY(8px) scale(0.985); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .animate-tab-swap {
+            animation: tabSwapIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes levelPop {
+            0% { transform: scale(0.92); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+        .level-active-pop {
+            animation: levelPop 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalFadeIn {
+            0% { opacity: 0; transform: scale(0.93) translateY(12px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-pop {
+            animation: modalFadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 4px 18px -2px rgba(14, 165, 233, 0.25); }
+            50% { box-shadow: 0 8px 28px 2px rgba(14, 165, 233, 0.45); }
+        }
+        .pulse-border-glow {
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes stopPulse {
+            0%, 100% { box-shadow: 0 8px 22px -3px rgba(225, 29, 72, 0.35); transform: scale(1); }
+            50% { box-shadow: 0 12px 30px 2px rgba(225, 29, 72, 0.55); transform: scale(1.008); }
+        }
+        #btn-stop {
+            animation: stopPulse 3.2s ease-in-out infinite;
+        }
+
+        /* Enhanced Card Hover & Transitions */
+        @media (hover: hover) {
+            .calm-card:hover {
+                box-shadow: 0 10px 28px -4px rgba(14, 165, 233, 0.12);
+                border-color: rgba(14, 165, 233, 0.3);
+            }
+        }
+
+        /* Smooth Slider Controls */
+        input[type=range] {
+            transition: background-color 150ms ease-out;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            transition: transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 150ms ease-out;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.5);
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.3);
+            box-shadow: 0 0 16px rgba(14, 165, 233, 0.7);
+        }
+
         /* Toast notification */
         .toast-banner {
             position: fixed;
@@ -208,21 +274,16 @@
          ========================================================================= -->
     <header class="sticky top-0 z-40 glass-top-bar h-14 sm:h-16 px-2.5 sm:px-6 transition-colors flex items-center justify-between gap-1.5 sm:gap-3">
         
-        <!-- Left: Logo & Device Name + Connection Pill -->
-        <div class="flex items-center space-x-1.5 sm:space-x-3 min-w-0 shrink-0">
-            <div class="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
-                <span class="text-lg sm:text-xl">🦺</span>
-                <span class="font-extrabold text-sm sm:text-base tracking-tight text-calm-text dark:text-darkCalm-text">SmartVest</span>
-            </div>
-
-            <!-- Connection Pill (Clickable to connect, Color + Text always) -->
-            <button id="btn-top-conn" onclick="handleTopConnClick()" class="calm-btn flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer" title="แตะเพื่อเชื่อมต่อ Bluetooth">
+        <!-- Left: Connection Pill & Mode Status (Logo removed per request) -->
+        <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 shrink-0">
+            <!-- Connection Pill (Clickable to connect, Color + Text always visible) -->
+            <button id="btn-top-conn" onclick="handleTopConnClick()" class="calm-btn flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer" style="background-color: #0284c7; color: #ffffff;" title="แตะเพื่อเชื่อมต่อ Bluetooth">
                 <i data-lucide="bluetooth" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"></i>
                 <span id="top-conn-dot" class="relative flex h-2 w-2">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-200 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                 </span>
-                <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight">
+                <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight text-white">
                     <span class="inline sm:hidden">เชื่อมต่อ</span>
                     <span class="hidden sm:inline">เชื่อมต่อ Bluetooth</span>
                 </span>
@@ -317,9 +378,9 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
-                    <button onclick="connectBLE()" class="calm-btn px-6 py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 bg-gradient-to-r from-sky-600 via-sky-500 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-black text-sm sm:text-base shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer ring-4 ring-sky-400/20">
-                        <i data-lucide="bluetooth" class="w-5 h-5"></i>
-                        <span>เชื่อมต่อ Bluetooth เดี๋ยวนี้</span>
+                    <button onclick="connectBLE()" class="calm-btn px-6 py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-sm sm:text-base shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer ring-4 ring-sky-400/20" style="background-color: #0284c7; color: #ffffff;">
+                        <i data-lucide="bluetooth" class="w-5 h-5 text-white"></i>
+                        <span class="text-white">เชื่อมต่อ Bluetooth เดี๋ยวนี้</span>
                     </button>
                     <div class="flex items-center gap-2 justify-center">
                         <button onclick="startDemoMode()" class="calm-btn flex-1 sm:flex-none px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center gap-1.5" title="ทดสอบระบบโดยไม่ต้องต่อฮาร์ดแวร์">
@@ -420,12 +481,12 @@
         </div>
 
         <!-- =========================================================================
-             SECTION 4 & 5: MIDDLE ROW (3D Scene ~60% | Fan Control Box ~40%)
+             SECTION 4 & 5: MIDDLE ROW (Balanced Desktop 50/50: 3D Scene | Fan Control Box)
              ========================================================================= -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
 
             <!-- 3D Fans Scene (No auto-rotation, Inertia, Ghost Disc, Airflow, Tap Inspector) -->
-            <div class="lg:col-span-7 calm-card p-3 sm:p-4 lg:p-5 flex flex-col relative overflow-hidden transition-colors">
+            <div class="lg:col-span-6 calm-card p-4 sm:p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300">
                 <div class="flex items-center justify-between mb-2 z-10">
                     <div>
                         <h2 class="text-xs sm:text-sm font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-1.5">
@@ -443,7 +504,7 @@
                 </div>
 
                 <!-- 3D Canvas Box -->
-                <div id="canvas-container" class="w-full h-[220px] sm:h-[320px] lg:h-[390px] rounded-2xl bg-calm-sub/60 dark:bg-darkCalm-sub/40 relative flex items-center justify-center overflow-hidden border border-calm-muted/10 cursor-grab active:cursor-grabbing touch-none">
+                <div id="canvas-container" class="w-full h-[260px] sm:h-[340px] lg:h-[415px] rounded-2xl bg-calm-sub/60 dark:bg-darkCalm-sub/40 relative flex items-center justify-center overflow-hidden border border-calm-muted/10 cursor-grab active:cursor-grabbing touch-none">
                     <canvas id="three-canvas" class="w-full h-full"></canvas>
 
                     <!-- 2D SVG/CSS Fallback (Shown if WebGL unsupported) -->
@@ -499,9 +560,35 @@
                 </div>
             </div>
 
-            <!-- Combined Fan Control Box (~40%) with Segmented Control -->
-            <div class="lg:col-span-5 calm-card p-4 sm:p-5 space-y-4 transition-colors">
+            <!-- Combined Fan Control Box (Balanced Desktop 50%) -->
+            <div class="lg:col-span-6 calm-card p-4 sm:p-5 space-y-4 flex flex-col justify-between transition-all duration-300">
                 
+                <!-- Dedicated Battery/Board Fan Control Box (Continuous Cooling + ON/OFF Switch) -->
+                <div class="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-calm-sub dark:bg-darkCalm-sub/80 border border-calm-muted/15 shadow-sm transition-all hover:border-amber-400/40">
+                    <div class="flex items-center space-x-2.5 sm:space-x-3">
+                        <div class="w-9 h-9 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center shrink-0 border border-amber-500/20">
+                            <i data-lucide="cpu" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs sm:text-sm font-bold text-calm-text dark:text-darkCalm-text flex items-center gap-1.5 flex-wrap">
+                                <span>พัดลมระบายบอร์ดและแบตเตอรี่ (30mm)</span>
+                                <span id="badge-bat-fan-status" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
+                                    🟢 ทำงานตลอด
+                                </span>
+                            </div>
+                            <div class="text-[11px] sm:text-xs text-calm-muted dark:text-darkCalm-muted flex items-center gap-2 mt-0.5">
+                                <span>ความเร็ว: <b id="text-bat-fan-speed" class="text-amber-500 font-mono font-bold">40% (หมุนตลอด)</b></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- iOS / Tailwind Toggle Switch -->
+                    <label class="relative inline-flex items-center cursor-pointer shrink-0 ml-2" title="เปิด/ปิด พัดลมระบายบอร์ดและแบตเตอรี่">
+                        <input type="checkbox" id="switch-bat-fan" class="sr-only peer" checked onchange="toggleBatteryFan(this.checked)">
+                        <div class="w-12 h-6 sm:h-7 bg-slate-300 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 sm:after:h-6 after:w-5 sm:after:w-6 after:transition-all peer-checked:bg-amber-500 shadow-inner"></div>
+                    </label>
+                </div>
+
                 <!-- Segmented Control [ระดับ] [อัตโนมัติ] [โปรแกรม] (Min 48px height) -->
                 <div class="bg-calm-sub dark:bg-darkCalm-sub p-1 rounded-2xl flex items-center border border-calm-muted/15">
                     <button id="ctrl-tab-lvl" onclick="switchControlTab('lvl')" class="calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-bold bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text shadow-sm transition-all flex items-center justify-center">
@@ -545,34 +632,46 @@
                         </button>
                     </div>
 
-                    <!-- Foldable Fine Tuning Sliders -->
-                    <details class="text-xs pt-1 border-t border-calm-muted/10">
-                        <summary class="font-bold text-calm-text dark:text-darkCalm-text cursor-pointer py-1.5 flex items-center justify-between">
-                            <span>💨 ปรับละเอียดแยกตัว/บ่า</span>
-                            <span class="text-calm-accent dark:text-darkCalm-accent text-[11px]">เปิดสไลเดอร์ ▼</span>
-                        </summary>
-                        <div class="space-y-3 pt-2">
-                            <div>
-                                <div class="flex justify-between items-center text-xs mb-1">
-                                    <span class="font-semibold text-calm-text dark:text-darkCalm-text">พัดลมตัว 70mm (0–100%)</span>
-                                    <span id="disp-slider-b" class="font-bold text-calm-accent dark:text-darkCalm-accent">0%</span>
-                                </div>
-                                <input id="slider-b" type="range" min="0" max="100" value="0" class="w-full h-2 bg-calm-sub dark:bg-darkCalm-sub rounded-lg appearance-none cursor-pointer accent-calm-accent" oninput="handleSliderB(this.value)">
-                            </div>
-                            <div>
-                                <div class="flex justify-between items-center text-xs mb-1">
-                                    <span class="font-semibold text-calm-text dark:text-darkCalm-text">พัดลมบ่า 40mm (จำกัด ≤ 70%)</span>
-                                    <span id="disp-slider-n" class="font-bold text-calm-accent dark:text-darkCalm-accent">0%</span>
-                                </div>
-                                <input id="slider-n" type="range" min="0" max="70" value="0" class="w-full h-2 bg-calm-sub dark:bg-darkCalm-sub rounded-lg appearance-none cursor-pointer accent-calm-accent" oninput="handleSliderN(this.value)">
-                            </div>
-                            <div class="p-2 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[11px] flex justify-between font-medium">
-                                <span>ตัวจริง: <b id="ctrl-tele-b">0%</b></span>
-                                <span>บ่าจริง: <b id="ctrl-tele-n">0%</b></span>
-                                <span>แบตจริง: <b id="ctrl-tele-bat">0%</b></span>
-                            </div>
+                    <!-- Fine Tuning Sliders (Always Visible Directly - ไม่ซ้อน) -->
+                    <div class="space-y-2.5 pt-2.5 border-t border-calm-muted/15">
+                        <div class="flex items-center justify-between text-xs font-bold text-calm-text dark:text-darkCalm-text">
+                            <span class="flex items-center gap-1.5">
+                                <i data-lucide="sliders" class="w-3.5 h-3.5 text-calm-accent"></i>
+                                <span>ปรับละเอียดแยกตัว/บ่า (Fine-Tune)</span>
+                            </span>
+                            <span class="text-[10px] text-calm-muted font-normal">สไลเดอร์อิสระ</span>
                         </div>
-                    </details>
+                        
+                        <!-- Slider 1: Body / Waist Fans 70mm -->
+                        <div class="p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub/70 border border-calm-muted/10 transition-colors hover:border-calm-accent/30">
+                            <div class="flex justify-between items-center text-xs mb-1">
+                                <span class="font-semibold text-calm-text dark:text-darkCalm-text flex items-center gap-1">
+                                    <span>💨 พัดลมเอว 70mm (คู่)</span>
+                                </span>
+                                <span id="disp-slider-b" class="font-mono font-bold text-calm-accent dark:text-darkCalm-accent">0%</span>
+                            </div>
+                            <input id="slider-b" type="range" min="0" max="100" value="0" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-calm-accent" oninput="handleSliderB(this.value)">
+                        </div>
+
+                        <!-- Slider 2: Shoulder / Neck Fans 40mm -->
+                        <div class="p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub/70 border border-calm-muted/10 transition-colors hover:border-calm-accent/30">
+                            <div class="flex justify-between items-center text-xs mb-1">
+                                <span class="font-semibold text-calm-text dark:text-darkCalm-text flex items-center gap-1">
+                                    <span>🌬️ พัดลมบ่า 40mm (คู่)</span>
+                                    <span class="text-[10px] text-calm-muted">(≤70%)</span>
+                                </span>
+                                <span id="disp-slider-n" class="font-mono font-bold text-calm-accent dark:text-darkCalm-accent">0%</span>
+                            </div>
+                            <input id="slider-n" type="range" min="0" max="70" value="0" class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-calm-accent" oninput="handleSliderN(this.value)">
+                        </div>
+
+                        <!-- Telemetry Speeds Summary Bar -->
+                        <div class="p-2 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[11px] flex justify-between font-medium">
+                            <span>เอวจริง: <b id="ctrl-tele-b" class="text-calm-accent font-bold">0%</b></span>
+                            <span>บ่าจริง: <b id="ctrl-tele-n" class="text-calm-accent font-bold">0%</b></span>
+                            <span>บอร์ดจริง: <b id="ctrl-tele-bat" class="text-amber-500 font-bold">0%</b></span>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Pane 2: อัตโนมัติ (Auto Mode & Visual HI Range Maps) -->
@@ -749,8 +848,8 @@
                     </div>
                 </div>
 
-                <!-- Card 2: Air Temp (Ta) - LARGE (col-span-1 md:col-span-3 lg:col-span-3) -->
-                <div class="col-span-1 md:col-span-3 lg:col-span-3 calm-card p-4 sm:p-5 flex flex-col justify-between">
+                <!-- Card 2: Air Temp (Ta) (col-span-1 md:col-span-3 lg:col-span-2) -->
+                <div class="col-span-1 md:col-span-3 lg:col-span-2 calm-card p-4 sm:p-5 flex flex-col justify-between">
                     <div class="flex items-center justify-between text-calm-muted dark:text-darkCalm-muted">
                         <span class="text-xs font-semibold flex items-center gap-1">🌡️ อากาศรอบตัว</span>
                         <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-calm-sub dark:bg-darkCalm-sub text-calm-muted">จำลอง</span>
@@ -801,8 +900,8 @@
                     </div>
                 </div>
 
-                <!-- Card 5: Battery SOC (col-span-1 md:col-span-2 lg:col-span-1) -->
-                <div id="card-soc" class="col-span-1 md:col-span-2 lg:col-span-1 calm-card p-4 sm:p-5 flex flex-col justify-between">
+                <!-- Card 5: Battery SOC (col-span-1 md:col-span-2 lg:col-span-2) -->
+                <div id="card-soc" class="col-span-1 md:col-span-2 lg:col-span-2 calm-card p-4 sm:p-5 flex flex-col justify-between">
                     <div class="flex items-center justify-between text-calm-muted dark:text-darkCalm-muted">
                         <span class="text-xs font-semibold flex items-center gap-1">⚡ SOC</span>
                         <span class="sim-badge text-[9px] font-bold px-1.5 py-0.5 rounded bg-calm-sub dark:bg-darkCalm-sub text-calm-muted">จำลอง</span>
@@ -1293,9 +1392,16 @@
             $('#fan-2d-bat')?.style.setProperty('animation', d.bat > 0 ? `spin ${Math.max(0.18, 2.2 - (d.bat/100)*2.0)}s linear infinite` : 'none');
 
             // Sliders Telemetry Readout
-            $('#ctrl-tele-b').textContent = d.b + '%';
-            $('#ctrl-tele-n').textContent = d.n + '%';
-            $('#ctrl-tele-bat').textContent = d.bat + '%';
+            if (isBatFanEnabled && (!d.bat || d.bat < 40)) {
+                d.bat = (d.tb >= 50) ? 100 : ((d.tb >= 40) ? 60 : 40);
+            }
+            if (!isBatFanEnabled) d.bat = 0;
+            targetSpeedBat = d.bat;
+            const textSpeedEl = $('#text-bat-fan-speed');
+            if (textSpeedEl) textSpeedEl.textContent = isBatFanEnabled ? `${d.bat}% (หมุนตลอด)` : `0% (ปิด)`;
+            if ($('#ctrl-tele-b')) $('#ctrl-tele-b').textContent = d.b + '%';
+            if ($('#ctrl-tele-n')) $('#ctrl-tele-n').textContent = d.n + '%';
+            if ($('#ctrl-tele-bat')) $('#ctrl-tele-bat').textContent = d.bat + '%';
 
             // Flags
             const isCutOrStopped = (d.f & 1) !== 0;
@@ -1384,7 +1490,7 @@
             evaluateAdvice(d, hi);
 
             // Update Hub LED Status in 3D
-            updateHubLedStatus(isCutOrStopped, isDerated);
+            updateHubLEDs();
 
             // Update Top Bar Mode Display
             updateTopModeDisplay(d);
@@ -1647,6 +1753,8 @@
                 if (modalStatus) modalStatus.textContent = 'เชื่อมต่ออยู่ (Connected)';
                 
                 if (btn) {
+                    btn.style.backgroundColor = '';
+                    btn.style.color = '';
                     btn.className = "calm-btn flex items-center space-x-1.5 sm:space-x-2 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border-2 border-emerald-500 shadow-sm active:scale-95 transition-all shrink-0 cursor-pointer";
                     btn.innerHTML = `
                         <i data-lucide="bluetooth" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
@@ -1682,14 +1790,16 @@
             } else {
                 // Disconnected (NONE)
                 if (btn) {
-                    btn.className = "calm-btn flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer";
+                    btn.style.backgroundColor = '#0284c7';
+                    btn.style.color = '#ffffff';
+                    btn.className = "calm-btn flex items-center space-x-1.5 sm:space-x-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-extrabold bg-sky-600 hover:bg-sky-500 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300 dark:ring-sky-700 active:scale-95 transition-all shrink-0 cursor-pointer";
                     btn.innerHTML = `
                         <i data-lucide="bluetooth" class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white"></i>
                         <span id="top-conn-dot" class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-300 opacity-75"></span>
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-200 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
                         </span>
-                        <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight">
+                        <span id="top-conn-text" class="text-xs sm:text-sm font-bold tracking-tight text-white">
                             <span class="inline sm:hidden">เชื่อมต่อ</span>
                             <span class="hidden sm:inline">เชื่อมต่อ Bluetooth</span>
                         </span>
@@ -1700,9 +1810,12 @@
             lucide.createIcons();
         }
 
-        // --- Keypad Click Handlers ---
+        // --- Keypad Click Handlers with Pop Animation ---
         $$('.btn-level').forEach(btn => {
             btn.onclick = () => {
+                btn.classList.remove('level-active-pop');
+                void btn.offsetWidth;
+                btn.classList.add('level-active-pop');
                 const lvl = parseInt(btn.dataset.lvl);
                 if (isAutoActive) {
                     setAutoMaster(false);
@@ -1739,14 +1852,61 @@
             sendCmd(2, cap);
         }
 
-        // --- Control Box Segmented Tabs Switcher ---
+        // --- Independent Continuous Battery Fan Control ---
+        let isBatFanEnabled = true;
+
+        function toggleBatteryFan(enabled) {
+            isBatFanEnabled = enabled;
+            haptic(25);
+            const badge = $('#badge-bat-fan-status');
+            const textSpeed = $('#text-bat-fan-speed');
+            const sw = $('#switch-bat-fan');
+            if (sw) sw.checked = enabled;
+
+            if (enabled) {
+                if (badge) {
+                    badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25";
+                    badge.textContent = "🟢 ทำงานตลอด";
+                }
+                const spd = (latestTel && latestTel.tb >= 50) ? 100 : ((latestTel && latestTel.tb >= 40) ? 60 : 40);
+                targetSpeedBat = spd;
+                latestTel.bat = spd;
+                if (textSpeed) textSpeed.textContent = `${spd}% (หมุนตลอด)`;
+                showToast('🌀 เปิดพัดลมระบายบอร์ด/แบตเตอรี่ (ทำงานต่อเนื่อง)');
+            } else {
+                if (badge) {
+                    badge.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/15 text-slate-500 dark:text-slate-400 border border-slate-500/25";
+                    badge.textContent = "⚪ ปิดพัดลมบอร์ด";
+                }
+                targetSpeedBat = 0;
+                latestTel.bat = 0;
+                if (textSpeed) textSpeed.textContent = "0% (ปิด)";
+                showToast('⏹ ปิดพัดลมระบายบอร์ด/แบตเตอรี่');
+            }
+            if ($('#ctrl-tele-bat')) $('#ctrl-tele-bat').textContent = latestTel.bat + '%';
+            if ($('#lbl-rpm-bat')) $('#lbl-rpm-bat').textContent = latestTel.bat + '%';
+        }
+
+        // --- Control Box Segmented Tabs Switcher with Smooth Animation ---
         function switchControlTab(tab) {
+            haptic(15);
             ['lvl', 'auto', 'prog'].forEach(t => {
                 const isTarget = (t === tab);
-                $(`#ctrl-tab-${t}`).className = isTarget 
-                    ? "calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-bold bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text shadow-sm transition-all flex items-center justify-center"
-                    : "calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-semibold text-calm-muted dark:text-darkCalm-muted hover:text-calm-text dark:hover:text-darkCalm-text transition-all flex items-center justify-center";
-                $(`#pane-ctrl-${t}`).classList.toggle('hidden', !isTarget);
+                const tabBtn = $(`#ctrl-tab-${t}`);
+                if (tabBtn) {
+                    tabBtn.className = isTarget 
+                        ? "calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-bold bg-calm-card dark:bg-darkCalm-card text-calm-text dark:text-darkCalm-text shadow-sm transition-all flex items-center justify-center scale-[1.02]"
+                        : "calm-btn flex-1 min-h-[48px] rounded-xl text-xs sm:text-[13px] font-semibold text-calm-muted dark:text-darkCalm-muted hover:text-calm-text dark:hover:text-darkCalm-text transition-all flex items-center justify-center";
+                }
+                const pane = $(`#pane-ctrl-${t}`);
+                if (pane) {
+                    pane.classList.toggle('hidden', !isTarget);
+                    if (isTarget) {
+                        pane.classList.remove('animate-tab-swap');
+                        void pane.offsetWidth; // trigger reflow for smooth animation
+                        pane.classList.add('animate-tab-swap');
+                    }
+                }
             });
         }
 
@@ -2232,9 +2392,8 @@
             if (telemetryChart) updateChartTheme(theme);
             if (scene) {
                 scene.background = new THREE.Color(theme === 'dark' ? 0x0b111a : 0xf8fafc);
-                if (vestMat) vestMat.color.setHex(theme === 'dark' ? 0x162032 : 0x1e293b);
-                if (pedestalMesh) pedestalMesh.material.color.setHex(theme === 'dark' ? 0x0f172a : 0xe2e8f0);
-                if (glowRingMesh) glowRingMesh.material.color.setHex(theme === 'dark' ? 0x0284c7 : 0x38bdf8);
+                if (pedestalMesh && pedestalMesh.material) pedestalMesh.material.color.setHex(theme === 'dark' ? 0x0f172a : 0xe2e8f0);
+                if (glowRingMesh && glowRingMesh.material) glowRingMesh.material.color.setHex(theme === 'dark' ? 0x0284c7 : 0x38bdf8);
             }
         }
 
@@ -2719,7 +2878,11 @@
             hubLedMeshes.forEach(mesh => {
                 if (mesh && mesh.material) mesh.material.color.setHex(ledColor);
             });
+            if (statusLedMesh && statusLedMesh.material) {
+                statusLedMesh.material.color.setHex(ledColor);
+            }
         }
+        const updateHubLedStatus = updateHubLEDs;
 
         // Tap Fan Inspector
         function handleFanClick(e) {
@@ -2943,9 +3106,13 @@
             const targetTb = 28 + 0.4 * (demo.ta - 25) + 0.06 * (effB + effN) + (demo.hot ? 45 : 0) - 0.06 * demo.batFan;
             demo.tb += (targetTb - demo.tb) * 0.1;
 
-            if (demo.cut) demo.batFan = 0;
-            else if (demo.tb >= 40 || (demo.batFan > 0 && demo.tb >= 37)) demo.batFan = Math.min(100, Math.max(15, Math.round(30 + (demo.tb - 40) * 5)));
-            else demo.batFan = 0;
+            if (!isBatFanEnabled || demo.cut) {
+                demo.batFan = 0;
+            } else {
+                if (demo.tb >= 50) demo.batFan = 100;
+                else if (demo.tb >= 40) demo.batFan = 60;
+                else demo.batFan = 40; // continuous cooling by default
+            }
 
             demo.soc = Math.max(0, demo.soc - 0.002 * (1 + (effB + effN) / 100));
             const flags = (demo.cut || demo.stopped ? 1 : 0) | (demo.hot ? 2 : 0) | (demo.tb >= 50 ? 4 : 0);
