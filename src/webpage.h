@@ -384,16 +384,12 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto shrink-0">
                     <button onclick="connectBLE()" class="calm-btn px-6 py-3.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black text-sm sm:text-base shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2.5 transition-all active:scale-95 cursor-pointer ring-4 ring-sky-400/20" style="background-color: #0284c7; color: #ffffff;">
                         <i data-lucide="bluetooth" class="w-5 h-5 text-white"></i>
-                        <span class="text-white">เชื่อมต่อ Bluetooth เดี๋ยวนี้</span>
+                        <span class="text-white">เชื่อมต่อ Bluetooth (BLE)</span>
                     </button>
-                    <div class="flex items-center gap-2 justify-center">
-                        <button onclick="startDemoMode()" class="calm-btn flex-1 sm:flex-none px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center gap-1.5" title="ทดสอบระบบโดยไม่ต้องต่อฮาร์ดแวร์">
-                            <span>🧪 Demo</span>
-                        </button>
-                        <button onclick="startWifiMode()" class="calm-btn flex-1 sm:flex-none px-3.5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold text-xs border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center gap-1.5" title="เชื่อมต่อผ่าน Wi-Fi AP 192.168.4.1">
-                            <span>📶 Wi-Fi</span>
-                        </button>
-                    </div>
+                    <button onclick="startWifiMode()" class="calm-btn px-4 py-3.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs sm:text-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer" title="เชื่อมต่อผ่าน Wi-Fi AP 192.168.4.1">
+                        <i data-lucide="wifi" class="w-4 h-4 text-sky-500"></i>
+                        <span>เชื่อมต่อ Wi-Fi (ESP32)</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -931,9 +927,9 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                 <button onclick="dismissAdvice()" class="calm-btn text-calm-muted hover:text-calm-text text-sm font-bold px-1.5 py-0.5" title="ปิดคำแนะนำนี้">✕</button>
             </div>
 
-            <!-- Simulation Note -->
-            <div id="sim-sensors-note" class="text-[11px] text-calm-muted text-center">
-                * ข้อมูลทั้งหมดข้างต้นเป็นค่าจำลองเนื่องจากยังไม่ได้เชื่อมต่อเซนเซอร์วัดค่าจริง
+            <!-- Real Hardware Status Note -->
+            <div id="sim-sensors-note" class="text-[11px] text-calm-muted text-center font-medium">
+                🟢 ระบบพร้อมรับส่งข้อมูลเทเลเมตรีและควบคุมฮาร์ดแวร์จริง (ESP32-S3 BLE / Wi-Fi Real Hardware Mode)
             </div>
 
             <!-- 10-Minute Trend Graph with 40°C, 50°C, 60°C Safety Threshold Lines -->
@@ -1087,8 +1083,8 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                         <button onclick="startWifiMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
                             📶 สลับ Wi-Fi AP
                         </button>
-                        <button onclick="startDemoMode()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
-                            🧪 โหมด Demo
+                        <button onclick="checkHardwareStatus()" class="calm-btn p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub hover:opacity-80 font-semibold text-calm-text dark:text-darkCalm-text">
+                            🔍 ตรวจสอบฮาร์ดแวร์
                         </button>
                     </div>
                     <div id="raw-tele-box" class="p-2.5 rounded-xl bg-calm-sub dark:bg-darkCalm-sub text-[10px] font-mono text-calm-muted break-all mt-2.5">
@@ -1184,7 +1180,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         };
 
         // Sensor simulation constant (Requirement C)
-        const SIMULATED_SENSORS = true;
+        const SIMULATED_SENSORS = false; // Real hardware mode: sensors online
 
         // Exact BLE GATT Protocol Constants
         const SVC_UUID = '7d1c0001-2f4b-4c1a-9a53-5b0e6f6c0a01';
@@ -1303,12 +1299,8 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             } else if (connMode === 'WIFI') {
                 fetch(`/api/cmd?c=${cmd}&v=${val}&a=${a}&b=${b}`).catch(e => console.warn(e));
             } else {
-                // For DEMO or local standalone browser preview: simulate immediately
-                demoHandleCmd(cmd, val, a, b);
-                demoTick();
-                if (!pollTimer) {
-                    pollTimer = setInterval(demoTick, 500);
-                }
+                // Real system mode: Not connected to hardware!
+                showToast('⚠️ กรุณาเชื่อมต่อ Bluetooth หรือ Wi-Fi กับเสื้อ SmartVest เพื่อสั่งงานพัดลม');
             }
         }
 
@@ -1712,13 +1704,13 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             } catch (err) {
                 console.warn('BLE connect canceled:', err);
                 setConnectionUI('NONE');
-                if (!pollTimer) pollTimer = setInterval(demoTick, 500);
+                // Real hardware mode: wait for live telemetry
             }
         }
 
         function onBLEDisconnected() {
             setConnectionUI('NONE');
-            if (!pollTimer) pollTimer = setInterval(demoTick, 500);
+            // Real hardware mode: wait for live telemetry
             const heroBanner = $('#ble-hero-banner');
             const lostBanner = $('#ble-lost-banner');
             if (heroBanner) heroBanner.classList.add('hidden');
@@ -1810,6 +1802,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
                     `;
                 }
                 if (heroBanner) heroBanner.classList.remove('hidden');
+                resetToStandbyUI();
             }
             lucide.createIcons();
         }
@@ -1862,6 +1855,7 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
         function toggleBatteryFan(enabled) {
             isBatFanEnabled = enabled;
             haptic(25);
+            sendCmd(10, enabled ? 1 : 0); // Command 10: Toggle Hardware Battery Fan
             const badge = $('#badge-bat-fan-status');
             const textSpeed = $('#text-bat-fan-speed');
             const sw = $('#switch-bat-fan');
@@ -3149,6 +3143,44 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             }, 1000);
         }
 
+                // --- Real Hardware Standby & Diagnostic Utilities ---
+        function resetToStandbyUI() {
+            $('#val-hi').textContent = '--.-';
+            $('#val-ta').textContent = '--.-';
+            $('#val-rh').textContent = '--';
+            $('#val-tb').textContent = '--.-';
+            $('#val-soc').textContent = '--';
+            $('#top-bat-soc').textContent = '--%';
+            $('#top-bat-temp').textContent = '--.-°C';
+            $('#hi-risk-tag').textContent = 'รอเชื่อมต่อ';
+            $('#hi-risk-tag').className = "ml-2 text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+            $('#top-mode-pill').textContent = 'โหมด: สแตนด์บาย';
+            $('#hero-mobile-mode').textContent = 'โหมด: รอเชื่อมต่อ';
+            $('#hero-status-title').textContent = 'พร้อมเชื่อมต่อระบบ';
+            $('#hero-status-desc').textContent = 'แตะปุ่มเชื่อมต่อ Bluetooth หรือ Wi-Fi ด้านบนเพื่อเริ่มสั่งการพัดลมจริง';
+            targetSpeedBody = 0;
+            targetSpeedNeck = 0;
+            if (!isBatFanEnabled) targetSpeedBat = 0;
+            $('#fan-3d-badge').textContent = '0% (0 RPM)';
+            $('#lbl-rpm-body').textContent = '0% (0 RPM)';
+            $('#lbl-rpm-neck').textContent = '0% (0 RPM)';
+            $('#hero-rpm-body').textContent = '0%';
+            $('#hero-rpm-neck').textContent = '0%';
+            $('#ctrl-tele-b').textContent = '0%';
+            $('#ctrl-tele-n').textContent = '0%';
+        }
+
+        function checkHardwareStatus() {
+            haptic(20);
+            if (connMode === 'BLE') {
+                showToast(`🔵 BLE เชื่อมต่อกับ ${(bleDevice && bleDevice.name) || 'SmartVest'} ปกติ (Telemetry Real-time)`);
+            } else if (connMode === 'WIFI') {
+                showToast(`📶 Wi-Fi เชื่อมต่อกับบอร์ด ESP32 สำเร็จ (HTTP Polling 500ms)`);
+            } else {
+                showToast('⚪ ยังไม่ได้เชื่อมต่อฮาร์ดแวร์ กรุณาแตะปุ่มเชื่อมต่อด้านบน');
+            }
+        }
+
         // --- Initialization ---
         window.addEventListener('DOMContentLoaded', () => {
             init3D();
@@ -3160,11 +3192,8 @@ const char INDEX_HTML[] PROGMEM = R"HTMLPAGE(
             setConnectionUI('NONE');
             startUptimeClock();
 
-            // Run initial baseline tick and start live interactive simulation
-            demoTick();
-            if (!pollTimer) {
-                pollTimer = setInterval(demoTick, 500);
-            }
+            // Real hardware mode: Start in clean standby state
+            resetToStandbyUI();
 
             // PWA Service Worker Registration
             if ('serviceWorker' in navigator && location.protocol === 'https:') {

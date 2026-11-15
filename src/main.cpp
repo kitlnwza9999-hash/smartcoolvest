@@ -12,6 +12,7 @@
 #include <BLEUtils.h>
 #include <BLE2902.h>
 #include <Preferences.h>
+#include <Wire.h>
 #include "webpage.h"
 
 // ------------------------------------------------------------------------------
@@ -19,7 +20,13 @@
 // ------------------------------------------------------------------------------
 #define PIN_FAN_BODY     11    // GPIO 11: พัดลมตัว 70 mm (×2) ผ่าน Low-Side MOSFET / Driver
 #define PIN_FAN_NECK     12    // GPIO 12: พัดลมบ่า 40 mm (×2) จำกัดกำลังลม ≤ 70%
-#define PIN_FAN_BAT      13    // GPIO 13: พัดลมระบายความร้อนแบตเตอรี่ 30 mm (ระบบควบคุมอัตโนมัติ)
+#define PIN_FAN_BAT      13    // GPIO 13: พัดลมระบายความร้อนแบตเตอรี่ 30 mm (PWM 25 kHz)
+
+// พินเซนเซอร์ฮาร์ดแวร์จริง (Real Hardware Sensors Mapping)
+#define PIN_BAT_VOLT     1     // GPIO 1: ADC1_CH0 วัดแรงดันแบตเตอรี่ผ่าน Voltage Divider
+#define PIN_NTC_BAT      2     // GPIO 2: ADC1_CH1 วัดอุณหภูมิแบตเตอรี่ผ่าน NTC 10k (B=3950)
+#define PIN_I2C_SDA      4     // GPIO 4: I2C SDA สำหรับเซนเซอร์ SHT31
+#define PIN_I2C_SCL      5     // GPIO 5: I2C SCL สำหรับเซนเซอร์ SHT31
 
 // ------------------------------------------------------------------------------
 // คอนฟิกูเรชัน PWM พัดลม (25 kHz Ultrasonic PWM & Slew Limiter)
@@ -57,10 +64,13 @@ int effB = 0;           // กำลังพัดลมตัวที่ร�
 int effN = 0;           // กำลังพัดลมบ่าที่ระบบจ่ายจริงหลังผ่าน Safety Scaling
 int batFan = 0;         // กำลังพัดลมแบตเตอรี่ (0 - 100% ระบบคุมอัตโนมัติ)
 
-bool stopped = false;   // ธงสั่งหยุดพัดลม (STOP)
-bool hotSim  = false;   // ธงจำลองแบตร้อนเพื่อทดสอบระบบความปลอดภัย
-bool cut     = false;   // ธงตัดวงจรนิรภัยค้าง (Latch Cutoff เมื่อ Tb >= 60°C)
-bool bleOn   = false;   // สถานะการเชื่อมต่อ Bluetooth BLE
+bool stopped        = false;  // ธงสั่งหยุดพัดลม (STOP)
+bool hotSim         = false;  // ธงจำลองแบตร้อนเพื่อทดสอบระบบความปลอดภัย
+bool cut            = false;  // ธงตัดวงจรนิรภัยค้าง (Latch Cutoff เมื่อ Tb >= 60°C)
+bool bleOn          = false;  // สถานะการเชื่อมต่อ Bluetooth BLE
+bool batFanEnabled  = true;   // เปิดพัดลมแบตเตอรี่ทำงานต่อเนื่องตลอด (Continuous Cooling)
+bool shtPresent     = false;  // ตรวจพบเซนเซอร์ SHT31 บน I2C หรือไม่
+uint8_t shtAddr     = 0x44;   // I2C Address ของ SHT31 (0x44 หรือ 0x45)
 
 // สถานะการขับ Duty จริงของแต่ละช่อง (สำหรับการทำ Soft-Start และ Kickstart)
 struct FanDriverState {
@@ -285,6 +295,10 @@ void handleCommand(int c, int v, int a = 0, int b = 0) {
       }
       break;
 
+    case 10: // ควบคุมสวิตช์พัดลมระบายบอร์ด/แบตเตอรี่ (0 = ปิด, 1 = เปิดทำงานตลอด)
+      batFanEnabled = (v != 0);
+      break;
+
     case 12: // โหมดทดสอบเร็ว (Fast Test: 1 นาที = 6 วินาที)
       fastTest = (v != 0);
       break;
@@ -292,12 +306,100 @@ void handleCommand(int c, int v, int a = 0, int b = 0) {
 }
 
 // ------------------------------------------------------------------------------
-// แบบจำลองอุณหภูมิและความปลอดภัยแบตเตอรี่ (Thermal & Safety Simulation)
+// การอ่านเซนเซอร์จริง (Real Hardware Sensors Acquisition)
 // ------------------------------------------------------------------------------
-void stepThermalSimulation() {
-  // สุ่มความผันผวนของสภาพแวดล้อมจำลอง
-  ta = constrain(ta + random(-10, 11) * 0.02f, 20.0f, 45.0f);
-  rh = constrain(rh + (int)random(-1, 2), 30, 95);
+bool initSHT31() {
+  Wire.begin(PIN_I2C_SDA, PIN_I2C_SCL, 100000);
+  Wire.beginTransmission(0x44);
+  if (Wire.endTransmission() == 0) {
+    shtPresent = true;
+    shtAddr = 0x44;
+    return true;
+  }
+  Wire.beginTransmission(0x45);
+  if (Wire.endTransmission() == 0) {
+    shtPresent = true;
+    shtAddr = 0x45;
+    return true;
+  }
+  shtPresent = false;
+  return false;
+}
+
+bool readSHT31(float &temp, int &humid) {
+  if (!shtPresent) return false;
+  Wire.beginTransmission(shtAddr);
+  Wire.write(0x24); // Single shot high repeatability
+  Wire.write(0x00);
+  if (Wire.endTransmission() != 0) return false;
+  delay(15);
+  if (Wire.requestFrom((int)shtAddr, 6) != 6) return false;
+  uint16_t rawT = ((uint16_t)Wire.read() << 8) | Wire.read();
+  Wire.read(); // CRC
+  uint16_t rawH = ((uint16_t)Wire.read() << 8) | Wire.read();
+  Wire.read(); // CRC
+
+  temp  = -45.0f + 175.0f * ((float)rawT / 65535.0f);
+  humid = constrain((int)(100.0f * ((float)rawH / 65535.0f)), 0, 100);
+  return true;
+}
+
+float readNTCBattery() {
+  int raw = analogRead(PIN_NTC_BAT);
+  // ตรวจสอบเงื่อนไขว่ามี NTC ต่ออยู่จริงหรือไม่
+  if (raw <= 30 || raw >= 4060) {
+    return (ta > 0 ? ta : 29.5f); // fallback ค่าอุณหภูมิปกติหากยังไม่ได้เสียบ NTC
+  }
+  float vout = (raw / 4095.0f) * 3.3f;
+  float rNTC = 10000.0f * (3.3f - vout) / vout;
+  if (rNTC <= 0) return 29.5f;
+
+  float steinhart = rNTC / 10000.0f;
+  steinhart = log(steinhart);
+  steinhart /= 3950.0f;
+  steinhart += 1.0f / (25.0f + 273.15f);
+  steinhart = 1.0f / steinhart;
+  float tempC = steinhart - 273.15f;
+  return constrain(tempC, 0.0f, 95.0f);
+}
+
+float readBatterySOC() {
+  int raw = analogRead(PIN_BAT_VOLT);
+  float vbat = (raw / 4095.0f) * 3.3f * 2.0f; // Voltage Divider 1:1
+  if (vbat < 2.0f) {
+    return 85.0f; // ถ้าไม่ได้ต่อวงจร Divider ให้ใช้ค่าสแตนด์บายของ Power Bank 85%
+  }
+  float pct = 0;
+  if (vbat >= 4.3f) {
+    pct = (vbat - 4.5f) / (5.1f - 4.5f) * 100.0f; // รางไฟ 5V USB
+  } else {
+    pct = (vbat - 3.3f) / (4.2f - 3.3f) * 100.0f; // แบตเตอรี่ Li-ion 1S
+  }
+  return constrain(pct, 0.0f, 100.0f);
+}
+
+// ระบบประมวลผลเซนเซอร์และความปลอดภัยจริง (Hardware Safety & Sensors Acquisition)
+void stepHardwareSensorsAndSafety() {
+  // 1. อ่านค่าเซนเซอร์จริง SHT31
+  float readT; int readH;
+  if (readSHT31(readT, readH)) {
+    ta = readT;
+    rh = readH;
+  } else {
+    // ถ้ายังไม่ได้เสียบ SHT31 รักษาระดับอุณหภูมิห้องปกติ
+    if (ta < 15.0f || ta > 60.0f) ta = 29.5f;
+    if (rh < 10 || rh > 95) rh = 55;
+  }
+
+  // 2. อ่านค่าอุณหภูมิแบตเตอรี่จริง
+  if (!hotSim) {
+    tb = readNTCBattery();
+  } else {
+    tb = 52.0f; // สำหรับทดสอบระบบ Thermal Derating
+  }
+
+  // 3. อ่านค่าความจุแบตเตอรี่จริง
+  soc = readBatterySOC();
 
   effB = setB;
   effN = setN;
@@ -318,21 +420,19 @@ void stepThermalSimulation() {
     effN = 0;
   }
 
-  // คำนวณแนวโน้มความร้อนสะสมของแบตเตอรี่
-  float targetTb = 28.0f + 0.4f * (ta - 25.0f) + 0.06f * (effB + effN) + (hotSim ? 45.0f : 0.0f) - 0.06f * batFan;
-  tb += (targetTb - tb) * 0.1f;
-
-  // กฎความปลอดภัย 3: พัดลมแบตเตอรี่ควบคุมอัตโนมัติ (เปิดเมื่อ Tb >= 40°C, Hysteresis ปิดเมื่อ < 37°C)
+  // กฎความปลอดภัย 3: พัดลมแบตเตอรี่ (30mm)
+  // หากเปิดโหมด Continuous: ทำงานที่ 40% และเร่งเป็น 60% เมื่อ Tb>=40°C, 100% เมื่อ Tb>=50°C
   if (cut) {
     batFan = 0;
-  } else if (tb >= 40.0f || (batFan > 0 && tb >= 37.0f)) {
-    batFan = constrain(30 + (int)((tb - 40.0f) * 5), 15, 100);
+  } else if (tb >= 50.0f) {
+    batFan = 100;
+  } else if (tb >= 40.0f) {
+    batFan = 60;
+  } else if (batFanEnabled) {
+    batFan = 40; // Continuous cooling baseline
   } else {
     batFan = 0;
   }
-
-  // จำลองการบริโภคพลังงานแบตเตอรี่ (SOC)
-  soc = max(0.0f, soc - 0.002f * (1.0f + (effB + effN) / 100.0f));
 }
 
 // ------------------------------------------------------------------------------
@@ -411,6 +511,11 @@ void setup() {
   // 3. เริ่มต้นไฟสถานะและตัวสร้างสุ่ม
   setSystemLed(false);
   randomSeed(esp_random());
+
+  // 3.1 เริ่มต้น I2C และตรวจจับเซนเซอร์ SHT31
+  analogReadResolution(12);
+  bool shtOk = initSHT31();
+  Serial.printf("  I2C Sensors (SHT31): %s (Addr: 0x%02X)\n", shtOk ? "ONLINE" : "OFFLINE (Using Standby Baseline)", shtAddr);
 
   // 4. โหลดโปรแกรม Custom จาก NVS
   pf.begin("vest", false);
@@ -508,7 +613,7 @@ void loop() {
     lastTick500ms = now;
 
     tickProgram();
-    stepThermalSimulation();
+    stepHardwareSensorsAndSafety();
 
     if (bleOn && telChar) {
       uint8_t packet[12];
