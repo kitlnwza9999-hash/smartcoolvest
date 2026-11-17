@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "author": "SmartCool Vest Team",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_body",
+      "top": -90,
+      "left": 230,
+      "attrs": { "color": "blue", "label": "Body 70mm Fan (GPIO 11)" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_body",
+      "top": -40,
+      "left": 160,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_neck",
+      "top": 20,
+      "left": 230,
+      "attrs": { "color": "cyan", "label": "Neck 40mm Fan (GPIO 12)" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_neck",
+      "top": 70,
+      "left": 160,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_bat",
+      "top": 130,
+      "left": 230,
+      "attrs": { "color": "orange", "label": "Bat 30mm Fan (GPIO 13)" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_bat",
+      "top": 180,
+      "left": 160,
+      "attrs": { "value": "220" }
+    },
+    {
+      "type": "wokwi-ntc-temperature-sensor",
+      "id": "ntc_bat",
+      "top": -120,
+      "left": -260,
+      "attrs": { "label": "Battery NTC Sensor (GPIO 2)" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot_soc",
+      "top": 30,
+      "left": -260,
+      "attrs": { "label": "Battery Voltage / SOC (GPIO 1)" }
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht_env",
+      "top": 180,
+      "left": -260,
+      "attrs": { "temperature": "32.5", "humidity": "62" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn_stop",
+      "top": 290,
+      "left": -40,
+      "attrs": { "color": "red", "label": "EMERGENCY STOP (GPIO 10)" }
+    }
+  ],
+  "connections": [
+    [ "esp:GND.1", "ntc_bat:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "ntc_bat:VCC", "red", [ "v0" ] ],
+    [ "esp:2", "ntc_bat:OUT", "gold", [ "v0" ] ],
+
+    [ "esp:GND.1", "pot_soc:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "pot_soc:VCC", "red", [ "v0" ] ],
+    [ "esp:1", "pot_soc:SIG", "purple", [ "v0" ] ],
+
+    [ "esp:GND.1", "dht_env:GND", "black", [ "v0" ] ],
+    [ "esp:3V3.1", "dht_env:VCC", "red", [ "v0" ] ],
+    [ "esp:4", "dht_env:SDA", "green", [ "v0" ] ],
+
+    [ "esp:11", "r_body:1", "blue", [ "v0" ] ],
+    [ "r_body:2", "led_body:A", "blue", [ "v0" ] ],
+    [ "led_body:C", "esp:GND.2", "black", [ "v0" ] ],
+
+    [ "esp:12", "r_neck:1", "cyan", [ "v0" ] ],
+    [ "r_neck:2", "led_neck:A", "cyan", [ "v0" ] ],
+    [ "led_neck:C", "esp:GND.2", "black", [ "v0" ] ],
+
+    [ "esp:13", "r_bat:1", "orange", [ "v0" ] ],
+    [ "r_bat:2", "led_bat:A", "orange", [ "v0" ] ],
+    [ "led_bat:C", "esp:GND.2", "black", [ "v0" ] ],
+
+    [ "esp:10", "btn_stop:2.1", "red", [ "v0" ] ],
+    [ "btn_stop:1.1", "esp:GND.2", "black", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
